@@ -1,0 +1,8 @@
+[19-Mar-2026 13:29:09 America/Chicago] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home2/nutrivdf/api.nutritionnook.net/config/database.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/nutrivdf/api.nutritionnook.net/config/database.php on line 19
+[19-Mar-2026 13:46:31 America/Chicago] PHP Fatal error:  Uncaught Error: Call to undefined function env() in /home2/nutrivdf/api.nutritionnook.net/config/database.php:19
+Stack trace:
+#0 {main}
+  thrown in /home2/nutrivdf/api.nutritionnook.net/config/database.php on line 19
