@@ -45,11 +45,24 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
     public function collection()
     {
         if ($this->data) {
-            return collect($this->data);
+            // return collect($this->data);
+             $data = collect($this->data);
+        } else {
+            // જો data ના આપ્યો હોય તો DB માંથી લો
+            $data = DB::table($this->tableName)->select($this->columns)->get();
         }
         
         // જો data ના આપ્યો હોય તો DB માંથી લો
-        return DB::table($this->tableName)->select($this->columns)->get();
+        // return DB::table($this->tableName)->select($this->columns)->get();
+
+        if (!in_array('deleted_at', $this->columns, true)) {
+            return $data;
+        }
+
+        // Keep active records first and move soft-deleted records to the bottom.
+        return $data
+            ->sortBy(fn ($row) => is_null(data_get($row, 'deleted_at')) ? 0 : 1)
+            ->values();
     }
 
     /**
@@ -106,7 +119,7 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
         return ucwords(str_replace('_', ' ', $column));
     }
 
-    /**
+     /**
      * Keep soft-delete metadata as the final Excel column when it is exported.
      */
     private function moveDeletedAtToEnd(array $columns): array
