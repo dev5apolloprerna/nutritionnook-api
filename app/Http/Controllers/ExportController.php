@@ -78,7 +78,8 @@ class ExportController extends Controller
      */
     public function exportCoupons()
     {
-        return $this->exportToExcel('coupons_code', [], [], 'coupons_' . date('Y-m-d') . '.xlsx');
+        // return $this->exportToExcel('coupons_code', [], [], 'coupons_' . date('Y-m-d') . '.xlsx');
+        return $this->exportToExcel('coupons', [], [], 'coupons_' . date('Y-m-d') . '.xlsx');
     }
     
     /**
