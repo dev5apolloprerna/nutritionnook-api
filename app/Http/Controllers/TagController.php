@@ -75,7 +75,7 @@ class TagController extends Controller
 
     public function destroy($id)
     {
-        $tag = Category::findOrFail($id);
+        $tag = Tag::findOrFail($id);
         $tag->delete();
         return redirect()->route('tags.index')->with('success', 'Tag deleted successfully!');
     }

@@ -21,14 +21,16 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
     public function __construct($tableName, $columns = [], $data = null, $sheetTitle = null)
     {
         $this->tableName = $tableName;
-        $this->columns = $columns;
+        // $this->columns = $columns;
+        $this->columns = $this->moveDeletedAtToEnd($columns);
         $this->data = $data;
         $this->sheetTitle = $sheetTitle ?: $this->formatHeading($tableName);
 
         // headings તૈયાર કરો (કોલમના નામને વધારે readable બનાવો)
         $this->headings = array_map(function($column) {
             return $this->formatHeading($column);
-        }, $columns);
+        // }, $columns);
+        }, $this->columns);
     }
 
     public function title(): string
@@ -102,5 +104,20 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
     {
         // underscore ને space માં બદલો અને પહેલા અક્ષર કેપિટલ કરો
         return ucwords(str_replace('_', ' ', $column));
+    }
+
+    /**
+     * Keep soft-delete metadata as the final Excel column when it is exported.
+     */
+    private function moveDeletedAtToEnd(array $columns): array
+    {
+        if (!in_array('deleted_at', $columns, true)) {
+            return $columns;
+        }
+
+        return [
+            ...array_values(array_filter($columns, fn ($column) => $column !== 'deleted_at')),
+            'deleted_at',
+        ];
     }
 }

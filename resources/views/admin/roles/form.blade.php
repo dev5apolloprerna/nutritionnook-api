@@ -109,7 +109,7 @@
                     </div> --}}
                     <div class="form-group col-md-12 mb-3">
                         <div class="form-check">
-                            <input type="checkbox" name="no_permission" id="no_permission" class="form-check-input"
+                            <input type="checkbox" name="no_permission" id="no_permission" class="form-check-input"  value="1"
                                 {{ isset($noPermission) && $noPermission ? 'checked' : '' }}>
                             <label for="no_permission" class="form-check-label">No Permission</label>
                         </div>

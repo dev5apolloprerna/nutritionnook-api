@@ -20,17 +20,17 @@ class ChefPayoutService
 
     public function __construct()
     {
-       $this->keyId = env('RAZORPAY_KEY');
-$this->keySecret = env('RAZORPAY_SECRET');
-$this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
+        $this->keyId = env('RAZORPAY_KEY');
+        $this->keySecret = env('RAZORPAY_SECRET');
+        $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
         $this->api = new Api($this->keyId, $this->keySecret);
     }
 
     public function runBulkPayout(): array
     {
         $chefs = Chef::where(function ($q) {
-                $q->where('is_delete', 0)->orWhereNull('is_delete');
-            })
+            $q->where('is_delete', 0)->orWhereNull('is_delete');
+        })
             ->get();
 
         $now = Carbon::now();
@@ -54,7 +54,7 @@ $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
                 ->where('status', 'delivered')
                 ->where('is_payout_completed', 0)
                 ->get();
-                
+
             // સાચી ગણતરી: Base Price (Amount - Fee - GST)
             $totalBaseEarnings = $unpaidOrders->sum('amount') - ($unpaidOrders->sum('platform_fee') + $unpaidOrders->sum('calculated_gst'));
 
@@ -66,7 +66,7 @@ $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
                 continue;
             }
             $result = $this->processIndividualPayout($chef, $totalBaseEarnings, $unpaidOrders);
-            
+
             if ($result['success']) {
                 $results['processed']++;
                 $results['details'][] = "Chef #{$chef->id} ({$chef->name}): Processing - ├втАЪ┬╣{$result['payout_amount']}";
@@ -142,7 +142,6 @@ $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
             DB::commit();
             Log::info("RETRY SUCCESS: Payout #{$payout->id} for Chef #{$chef->id} - Razorpay ID: {$payoutResponse['id']}");
             return ['success' => true, 'payout_amount' => $payout->payout_amount];
-
         } catch (\Exception $e) {
             DB::rollBack();
             $payout->update(['failure_reason' => $e->getMessage()]);
@@ -194,17 +193,17 @@ $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
             ]);
 
             $payoutRecord = Payout::create([
-            'chef_id' => $chef->id,
-            'total_earning' => $chefBaseTotal,       // ₹249.00 (Base)
-            'commission_amount' => $totalSecurityDeposit, // ₹24.90 (Security)
-            'payout_amount' => $netPayout,           // ₹224.10 (Hand cash)
-            'razorpay_payout_id' => $payoutResponse['id'],
-            'razorpay_fund_account_id' => $fundAccountId,
-            'status' => 'processing',
-            'payout_month' => $now->month,
-            'payout_year' => $now->year,
-            'order_count' => $orders->count(),
-        ]);
+                'chef_id' => $chef->id,
+                'total_earning' => $chefBaseTotal,       // ₹249.00 (Base)
+                'commission_amount' => $totalSecurityDeposit, // ₹24.90 (Security)
+                'payout_amount' => $netPayout,           // ₹224.10 (Hand cash)
+                'razorpay_payout_id' => $payoutResponse['id'],
+                'razorpay_fund_account_id' => $fundAccountId,
+                'status' => 'processing',
+                'payout_month' => $now->month,
+                'payout_year' => $now->year,
+                'order_count' => $orders->count(),
+            ]);
 
             Order::whereIn('id', $orders->pluck('id'))->update([
                 'is_payout_completed' => 1,
@@ -214,7 +213,6 @@ $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
             DB::commit();
             Log::info("PAYOUT INITIATED: ├втАЪ┬╣{$netPayout} for Chef #{$chef->id} | Razorpay ID: {$payoutResponse['id']}");
             return ['success' => true, 'payout_amount' => $netPayout];
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("FAILED PAYOUT: Chef #{$chef->id} | Error: " . $e->getMessage());
@@ -300,46 +298,45 @@ $this->accountNumber = env('RAZORPAY_X_ACCOUNT_NUMBER');
     }
 
     protected function createRazorpayPayout(string $fundAccountId, int $amountInPaise, array $notes = []): array
-{
-    try {
-        $response = Http::withBasicAuth($this->keyId, $this->keySecret)
-            ->withHeaders([
-                'X-Razorpay-Account' => $this->accountNumber, // ├░┼╕тАЭ┬е MUST
-                'Content-Type' => 'application/json'
-            ])
-            ->post('https://api.razorpay.com/v1/payouts', [
-                'account_number' => $this->accountNumber,
-                'fund_account_id' => $fundAccountId,
-                'amount' => $amountInPaise,
-                'currency' => 'INR',
-                'mode' => 'IMPS', // or UPI / NEFT
-                'purpose' => 'payout',
-                'queue_if_low_balance' => true,
-                'reference_id' => 'payout_' . time() . '_' . ($notes['chef_id'] ?? ''),
-                'narration' => 'Nutrition Nook Payout',
-                'notes' => $notes,
+    {
+        try {
+            $response = Http::withBasicAuth($this->keyId, $this->keySecret)
+                ->withHeaders([
+                    'X-Razorpay-Account' => $this->accountNumber, // ├░┼╕тАЭ┬е MUST
+                    'Content-Type' => 'application/json'
+                ])
+                ->post('https://api.razorpay.com/v1/payouts', [
+                    'account_number' => $this->accountNumber,
+                    'fund_account_id' => $fundAccountId,
+                    'amount' => $amountInPaise,
+                    'currency' => 'INR',
+                    'mode' => 'IMPS', // or UPI / NEFT
+                    'purpose' => 'payout',
+                    'queue_if_low_balance' => true,
+                    'reference_id' => 'payout_' . time() . '_' . ($notes['chef_id'] ?? ''),
+                    'narration' => 'Nutrition Nook Payout',
+                    'notes' => $notes,
+                ]);
+
+            // Debug log (VERY IMPORTANT)
+            \Log::info('Razorpay Payout Response', [
+                'status' => $response->status(),
+                'body' => $response->body()
             ]);
 
-        // Debug log (VERY IMPORTANT)
-        \Log::info('Razorpay Payout Response', [
-            'status' => $response->status(),
-            'body' => $response->body()
-        ]);
+            if (!$response->successful()) {
+                throw new \Exception('Razorpay payout failed: ' . $response->body());
+            }
 
-        if (!$response->successful()) {
-            throw new \Exception('Razorpay payout failed: ' . $response->body());
+            return $response->json();
+        } catch (\Exception $e) {
+            \Log::error('Razorpay Payout Error', [
+                'message' => $e->getMessage()
+            ]);
+
+            throw $e;
         }
-
-        return $response->json();
-
-    } catch (\Exception $e) {
-        \Log::error('Razorpay Payout Error', [
-            'message' => $e->getMessage()
-        ]);
-
-        throw $e;
     }
-}
 
     public function getMonthlyReport(int $month, int $year): array
     {

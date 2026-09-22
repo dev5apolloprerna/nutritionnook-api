@@ -29,7 +29,7 @@ class RolesController extends Controller
             'no_permission' => 'nullable|boolean',
             'status' => 'required|in:active,inactive',
         ]);
-
+        
         // if (!$request->has('no_permission') && empty($request->modules)) {
         //     return redirect()->back()->withErrors(['modules' => 'Please select either "No Permission" or at least one module.'])->withInput();
         // }
