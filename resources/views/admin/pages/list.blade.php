@@ -45,8 +45,8 @@
                                     <td>{{ $loop->iteration }}</td>
 
                                     <td>
-                                        @if (!empty($page->image) && file_exists($page->image))
-                                            <img src="{{ asset($page->image) }}" alt="Image" width="60" height="60" style="object-fit: cover;">
+                                        @if ($page->image_url)
+                                            <img src="{{ $page->image_url }}" alt="{{ $page->title }}" width="60" height="60" style="object-fit: cover;">
                                         @else
                                             <span class="text-muted">No Image</span>
                                         @endif

@@ -16,4 +16,17 @@ class page extends Model
         'image',
         'status',
     ];
+
+    
+    public function getImageUrlAttribute(): ?string
+    {
+        if (empty($this->image)) {
+            return null;
+        }
+
+        // Support both legacy "public/images/..." values and the current "images/..." format.
+        $path = preg_replace('#^public/#', '', ltrim($this->image, '/'));
+
+        return asset($path);
+    }
 }

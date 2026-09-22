@@ -1,8 +1,3 @@
-@php
-    use App\Models\Setting;
-    $setting = Setting::first();
-@endphp
-
 <!-- partial:partials/_navbar.html -->
 <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
     <div class="navbar-brand-wrapper d-flex align-items-center justify-content-start">

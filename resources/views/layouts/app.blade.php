@@ -1,3 +1,10 @@
+@php
+    $setting = \App\Models\Setting::first();
+    $loaderLogo = !empty($setting?->logo)
+        ? asset('/images/' . $setting->logo)
+        : asset('/images/1755158105Nutritionnook_logo 512_512.png');
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -51,6 +58,51 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
+        .page-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f2edf3;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .page-loader.is-loaded {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .page-loader__logo {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+            border-radius: 50%;
+            animation: loader-pulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes loader-pulse {
+            0%, 100% {
+                transform: scale(0.94);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .page-loader__logo {
+                animation: none;
+            }
+        }
+
         .back-button {
             display: inline-flex;
             align-items: center;
@@ -74,6 +126,9 @@
 </head>
 
 <body>
+    <div class="page-loader" id="pageLoader" role="status" aria-label="Loading">
+        <img class="page-loader__logo" src="{{ $loaderLogo }}" alt="Nutrition Nook">
+    </div>
     <div class="container-scroller">
         @include('layouts.navbar')
         <div class="container-fluid page-body-wrapper">
@@ -130,6 +185,15 @@
 
 
     <script>
+        const pageLoader = document.getElementById('pageLoader');
+
+        const hidePageLoader = () => {
+            pageLoader?.classList.add('is-loaded');
+        };
+
+        window.addEventListener('load', hidePageLoader);
+        window.setTimeout(hidePageLoader, 5000);
+        
         function confirmLogout(e) {
             e.preventDefault();
             Swal.fire({
