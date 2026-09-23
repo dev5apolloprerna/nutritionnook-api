@@ -153,7 +153,8 @@ class CommonHelper
      * Chef payout basis for a set of orders — the single source of truth for
      * "what the chef earns / is owed". Uses each line item's menu base price
      * (food_dishes.base_price) x quantity across ALL items in the order, then
-     * splits 90% payable to the chef / 10% held as platform security.
+     * splits 90% payable to the chef / 10% held as the security deposit. The
+     * gross dish total remains available separately for earnings displays.
      *
      * Falls back to backing the commission out of the stored line price when a
      * dish has no base_price (deleted dish / legacy order), or out of the whole
@@ -196,9 +197,15 @@ class CommonHelper
                 $qty = (float) ($it['quantity'] ?? 1);
                 $id  = $it['id'] ?? null;
 
-                $base = ($id !== null && isset($basePrices[$id]) && (float) $basePrices[$id] > 0)
-                    ? (float) $basePrices[$id]
-                    : ((float) ($it['price'] ?? 0)) / $divisor;
+                // New orders snapshot base_price so historical earnings cannot
+                // change when a chef later edits or deletes a menu item. Legacy
+                // orders fall back to the current dish record, then line price.
+                $snapshotBase = (float) ($it['base_price'] ?? 0);
+                $base = $snapshotBase > 0
+                    ? $snapshotBase
+                    : (($id !== null && isset($basePrices[$id]) && (float) $basePrices[$id] > 0)
+                        ? (float) $basePrices[$id]
+                        : ((float) ($it['price'] ?? 0)) / $divisor);
 
                 $dishTotal += $base * $qty;
             }

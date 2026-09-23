@@ -599,27 +599,26 @@ class ApiController extends Controller
         $commRate = $chef->commission ?? 0;
         $now = Carbon::now();
 
-        // Chef payout (the full menu base-price total) for DELIVERED // Chef net payout (90% of menu base price, 10% security) for DELIVERED
-        // orders in a window — same basis as the admin Payout page, the actual
-        // payout, and the earnings-overview API. Counts every item + quantity.
-        $periodPayout = function ($start, $end) use ($chefId, $commRate) {
+        // Earnings cards show the full menu base-price total. The separate
+        // payout fields continue to apply the 90% payout / 10% deposit split.
+        $periodEarnings = function ($start, $end) use ($chefId, $commRate) {
             $orders = Order::where('chef_id', $chefId)
                 ->where('status', 'delivered')
                 ->whereBetween('date', [$start, $end])
                 ->get();
-            return CommonHelper::chefPayoutBreakdown($orders, $commRate)['net_payout'];
+            return CommonHelper::chefPayoutBreakdown($orders, $commRate)['dish_total'];
         };
 
         // Today, Week, Month Metrics
-        $todayData = ['earnings' => $periodPayout(Carbon::today()->startOfDay(), Carbon::today()->endOfDay())];
-        $weekData  = ['earnings' => $periodPayout(Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek())];
-        $monthData = ['earnings' => $periodPayout(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth())];
+        $todayData = ['earnings' => $periodEarnings(Carbon::today()->startOfDay(), Carbon::today()->endOfDay())];
+        $weekData  = ['earnings' => $periodEarnings(Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek())];
+        $monthData = ['earnings' => $periodEarnings(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth())];
 
         // Custom Date Range (Past Earning)
         $pastEarning = 0;
         if ($fromDate && $toDate) {
             try {
-                $pastEarning = $periodPayout(
+                $pastEarning = $periodEarnings(
                     Carbon::parse($fromDate)->startOfDay(),
                     Carbon::parse($toDate)->endOfDay()
                 );
@@ -756,36 +755,34 @@ class ApiController extends Controller
         $fromDate = $request->from_date;
         $toDate   = $request->to_date;
 
-        // Chef's payout (the full menu base-price total) for // Chef's net payout (90% of the menu base price, 10% held as security) for
-        // DELIVERED orders in a date window — the SAME basis as the admin Payout
-        // page and the actual bank payout. Uses CommonHelper::chefPayoutBreakdown
-        // so every item + quantity in the order is counted.
-        $periodPayout = function ($start, $end) use ($chefId, $commRate) {
+        // Earnings cards show the full menu base-price total for delivered
+        // orders. Payout amounts below retain the 90% payout / 10% deposit split.
+        $periodEarnings = function ($start, $end) use ($chefId, $commRate) {
             $orders = Order::where('chef_id', $chefId)
                 ->where('status', 'delivered')
                 ->whereBetween('date', [$start, $end])
                 ->get();
-            return CommonHelper::chefPayoutBreakdown($orders, $commRate)['net_payout'];
+            return CommonHelper::chefPayoutBreakdown($orders, $commRate)['dish_total'];
         };
 
         // Today / Week / Month always reflect the live current period.
-        $today = $periodPayout(Carbon::today()->startOfDay(), Carbon::today()->endOfDay());
-        $week  = $periodPayout($now->copy()->startOfWeek(), $now->copy()->endOfWeek());
-        $month = $periodPayout($now->copy()->startOfMonth(), $now->copy()->endOfMonth());
+        $today = $periodEarnings(Carbon::today()->startOfDay(), Carbon::today()->endOfDay());
+        $week  = $periodEarnings($now->copy()->startOfWeek(), $now->copy()->endOfWeek());
+        $month = $periodEarnings($now->copy()->startOfMonth(), $now->copy()->endOfMonth());
 
         // Year card: a custom range (from_date + to_date) overrides it; otherwise
         // the current calendar year.
         if ($fromDate && $toDate) {
             try {
-                $year = $periodPayout(
+                $year = $periodEarnings(
                     Carbon::parse($fromDate)->startOfDay(),
                     Carbon::parse($toDate)->endOfDay()
                 );
             } catch (\Exception $e) {
-                $year = $periodPayout($now->copy()->startOfYear(), $now->copy()->endOfYear());
+                $year = $periodEarnings($now->copy()->startOfYear(), $now->copy()->endOfYear());
             }
         } else {
-            $year = $periodPayout($now->copy()->startOfYear(), $now->copy()->endOfYear());
+            $year = $periodEarnings($now->copy()->startOfYear(), $now->copy()->endOfYear());
         }
 
         // Pending payout = unpaid delivered orders (all-time), same breakdown.

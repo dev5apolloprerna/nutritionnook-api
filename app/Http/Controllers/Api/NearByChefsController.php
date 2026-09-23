@@ -12,349 +12,349 @@ use Illuminate\Support\Facades\Auth;
 
 class NearByChefsController extends Controller
 {
- 
- public function getNearbyChefs(Request $request)
-{
-    $user = Auth::user();
 
-    // 1️⃣ Selected user address
-    $token = $request->bearerToken();
+    public function getNearbyChefs(Request $request)
+    {
+        $user = Auth::user();
 
-    if ($token) {
-        $accessToken = PersonalAccessToken::findToken($token);
+        // 1️⃣ Selected user address
+        $token = $request->bearerToken();
 
-        if ($accessToken) {
-            $user = $accessToken->tokenable; // 👈 logged-in user
+        if ($token) {
+            $accessToken = PersonalAccessToken::findToken($token);
+
+            if ($accessToken) {
+                $user = $accessToken->tokenable; // 👈 logged-in user
+            }
         }
-    }
-    $defaultLat = env('DEFAULT_LAT', 22.9952);
-$defaultLng = env('DEFAULT_LNG', 72.6041);
-$isGuest = !$user;
-if (!$user) {
-    
-    $userLat = $defaultLat;
-    $userLng = $defaultLng;
-} else {
+        $defaultLat = env('DEFAULT_LAT', 22.9952);
+        $defaultLng = env('DEFAULT_LNG', 72.6041);
+        $isGuest = !$user;
+        if (!$user) {
 
-    $userAddress = DB::table('user_addresses')
-        ->where('user_id', $user->id)
-        ->where('is_selected', 1)
-        ->first();
+            $userLat = $defaultLat;
+            $userLng = $defaultLng;
+        } else {
 
-    if (!$userAddress) {
-        $userLat = $defaultLat;
-        $userLng = $defaultLng;
-    } else {
-        $userLat = $userAddress->latitude ?? $defaultLat;
-        $userLng = $userAddress->longitude ?? $defaultLng;
-    }
-}
+            $userAddress = DB::table('user_addresses')
+                ->where('user_id', $user->id)
+                ->where('is_selected', 1)
+                ->first();
 
-    // 2️⃣ Radius (KM)
-    $radius = \App\Models\Setting::value('radius_km') ?? 10;
-
-    // 3️⃣ Pagination
-    $perPage = $request->input('per_page', 10);
-    $page    = $request->input('page', 1);
-
-    // 4️⃣ Cuisine filter
-    $cuisineTypeId = $request->input('cuisine_type_id');
-
-    $chefIds = [];
-
-    // 👉 Apply cuisine logic ONLY when cuisine != 1 (All)
-    if ($cuisineTypeId && $cuisineTypeId != 1) {
-
-        $chefIds = DB::table('food_dishes')
-            ->where('cuisine_type_id', $cuisineTypeId)
-            ->pluck('chef_id')
-            ->unique()
-            ->toArray();
-
-        // ❌ Cuisine exists but no chef at all
-        if (empty($chefIds)) {
-            return CommonHelper::apiResponse(
-                200,
-                false,
-                'This cuisine is not available within ' . $radius . ' km.',
-                []
-            );
+            if (!$userAddress) {
+                $userLat = $defaultLat;
+                $userLng = $defaultLng;
+            } else {
+                $userLat = $userAddress->latitude ?? $defaultLat;
+                $userLng = $userAddress->longitude ?? $defaultLng;
+            }
         }
-    }
 
-    // 5️⃣ Date → Day
-    $day = null;
-    if ($request->filled('date')) {
-        $day = strtolower(\Carbon\Carbon::parse($request->date)->format('l'));
-    }
+        // 2️⃣ Radius (KM)
+        $radius = \App\Models\Setting::value('radius_km') ?? 10;
 
-    // 6️⃣ Nearby chefs query (STRICT radius filter)
-    $chefsQuery = DB::table('chefs')
-        ->select(
-            'chefs.id',
-            'chefs.name',
-            'chefs.business_name',
-            'chefs.kitchen_type',
-            'chefs.kitchen_name',
-            'chefs.profile_image',
-            'chefs.city as location',
-            'chefs.address',
-            'chefs.available',
-            'chefs.working_days',
-            DB::raw("ROUND(6371 * acos(
+        // 3️⃣ Pagination
+        $perPage = $request->input('per_page', 10);
+        $page    = $request->input('page', 1);
+
+        // 4️⃣ Cuisine filter
+        $cuisineTypeId = $request->input('cuisine_type_id');
+
+        $chefIds = [];
+
+        // 👉 Apply cuisine logic ONLY when cuisine != 1 (All)
+        if ($cuisineTypeId && $cuisineTypeId != 1) {
+
+            $chefIds = DB::table('food_dishes')
+                ->where('cuisine_type_id', $cuisineTypeId)
+                ->pluck('chef_id')
+                ->unique()
+                ->toArray();
+
+            // ❌ Cuisine exists but no chef at all
+            if (empty($chefIds)) {
+                return CommonHelper::apiResponse(
+                    200,
+                    false,
+                    'This cuisine is not available within ' . $radius . ' km.',
+                    []
+                );
+            }
+        }
+
+        // 5️⃣ Date → Day
+        $day = null;
+        if ($request->filled('date')) {
+            $day = strtolower(\Carbon\Carbon::parse($request->date)->format('l'));
+        }
+
+        // 6️⃣ Nearby chefs query (STRICT radius filter)
+        $chefsQuery = DB::table('chefs')
+            ->select(
+                'chefs.id',
+                'chefs.name',
+                'chefs.business_name',
+                'chefs.kitchen_type',
+                'chefs.kitchen_name',
+                'chefs.profile_image',
+                'chefs.city as location',
+                'chefs.address',
+                'chefs.available',
+                'chefs.working_days',
+                DB::raw("ROUND(6371 * acos(
                 cos(radians($userLat)) *
                 cos(radians(chefs.latitude)) *
                 cos(radians(chefs.longitude) - radians($userLng)) +
                 sin(radians($userLat)) *
                 sin(radians(chefs.latitude))
             ), 1) AS distance")
-        )
-        ->having('distance', '<=', $radius)
-        // ->where('available', 1)
-        ->whereExists(function ($query) {
-            $query->select(DB::raw(1))
-                ->from('food_dishes')
-                ->whereColumn('food_dishes.chef_id', 'chefs.id');
+            )
+            ->having('distance', '<=', $radius)
+            // ->where('available', 1)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('food_dishes')
+                    ->whereColumn('food_dishes.chef_id', 'chefs.id');
                 // ->where('food_dishes.in_stock', 1);
-        })
-        ->orderBy('distance', 'asc');
+            })
+            ->orderBy('distance', 'asc');
 
-    // 👉 Cuisine filter only when needed
-    if ($cuisineTypeId && $cuisineTypeId != 1) {
-        $chefsQuery->whereIn('chefs.id', $chefIds);
-    }
+        // 👉 Cuisine filter only when needed
+        if ($cuisineTypeId && $cuisineTypeId != 1) {
+            $chefsQuery->whereIn('chefs.id', $chefIds);
+        }
 
-    // 👉 Working day filter
-    if ($day) {
-        $chefsQuery->whereJsonContains('chefs.working_days', $day);
-    }
+        // 👉 Working day filter
+        if ($day) {
+            $chefsQuery->whereJsonContains('chefs.working_days', $day);
+        }
 
-    // 7️⃣ Pagination
-    $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
+        // 7️⃣ Pagination
+        $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
 
-    // 8️⃣ Favourite chefs
-    
-    if ($user) {
-    $favourites = DB::table('favourite_chefs')
-        ->where('user_id', $user->id)
-        ->pluck('chef_id')
-        ->toArray();
-    }else{
-       $favourites = []; 
-    }
+        // 8️⃣ Favourite chefs
 
-    // 9️⃣ Transform response
-    $chefs->getCollection()->transform(function ($chef) use ($favourites) {
-        $chef->distance = $chef->distance . ' km';
-        $chef->profile_image = $chef->profile_image ? asset($chef->profile_image) : null;
-        $chef->working_days = $chef->working_days ? json_decode($chef->working_days, true) : [];
-        $chef->is_fav = in_array($chef->id, $favourites);
-        return $chef;
-    });
+        if ($user) {
+            $favourites = DB::table('favourite_chefs')
+                ->where('user_id', $user->id)
+                ->pluck('chef_id')
+                ->toArray();
+        } else {
+            $favourites = [];
+        }
 
-    // 🔚 Final response
-    if ($chefs->isEmpty()) {
+        // 9️⃣ Transform response
+        $chefs->getCollection()->transform(function ($chef) use ($favourites) {
+            $chef->distance = $chef->distance . ' km';
+            $chef->profile_image = $chef->profile_image ? asset($chef->profile_image) : null;
+            $chef->working_days = $chef->working_days ? json_decode($chef->working_days, true) : [];
+            $chef->is_fav = in_array($chef->id, $favourites);
+            return $chef;
+        });
+
+        // 🔚 Final response
+        if ($chefs->isEmpty()) {
+            return CommonHelper::apiResponse(
+                200,
+                false,
+                'No chefs available within ' . $radius . ' km.',
+                []
+            );
+        }
+
         return CommonHelper::apiResponse(
             200,
-            false,
-            'No chefs available within ' . $radius . ' km.',
-            []
+            true,
+            'Nearby chefs fetched successfully.',
+            $chefs
         );
     }
 
-    return CommonHelper::apiResponse(
-        200,
-        true,
-        'Nearby chefs fetched successfully.',
-        $chefs
-    );
-}
+    //  public function getNearbyChefs(Request $request)
+    // {
+    //     $user = Auth::user(); 
+    //     $userAddress = DB::table('user_addresses')
+    //         ->where('user_id', $user->id)
+    //         ->where('is_selected', 1)
+    //         ->first();
 
-//  public function getNearbyChefs(Request $request)
-// {
-//     $user = Auth::user(); 
-//     $userAddress = DB::table('user_addresses')
-//         ->where('user_id', $user->id)
-//         ->where('is_selected', 1)
-//         ->first();
+    //     if (!$userAddress) {
+    //         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
+    //     }
+    //     $userLat = $userAddress->latitude;
+    //     $userLng = $userAddress->longitude;
 
-//     if (!$userAddress) {
-//         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
-//     }
-//     $userLat = $userAddress->latitude;
-//     $userLng = $userAddress->longitude;
+    //     $settings = \App\Models\Setting::select('radius_km')->first();
+    //     $radius = $settings?->radius_km ?? 10;
+    //     $perPage = $request->input('per_page', 10);
+    //     $page    = $request->input('page', 1);
 
-//     $settings = \App\Models\Setting::select('radius_km')->first();
-//     $radius = $settings?->radius_km ?? 10;
-//     $perPage = $request->input('per_page', 10);
-//     $page    = $request->input('page', 1);
+    //     $cuisineTypeId = $request->input('cuisine_type_id', null);
 
-//     $cuisineTypeId = $request->input('cuisine_type_id', null);
+    //     $chefIds = null;
+    //     if ($cuisineTypeId) {
+    //         $chefIds = DB::table('food_dishes')
+    //             ->where('cuisine_type_id', $cuisineTypeId)
+    //             ->pluck('chef_id')
+    //             ->toArray();
+    //     }
+    //     $day = null;
+    //     if ($request->has('date')) {
+    //         $day = strtolower(\Carbon\Carbon::parse($request->input('date'))->format('l'));
+    //     }
+    //     $chefsQuery = DB::table('chefs')
+    //         ->select(
+    //             'chefs.id',
+    //             'chefs.name',
+    //             'chefs.business_name',
+    //             'chefs.kitchen_type',
+    //             'chefs.kitchen_name',
+    //             'chefs.profile_image',
+    //             'chefs.city as location',
+    //             'chefs.address as address',
+    //             'chefs.working_days',
+    //             DB::raw("ROUND(6371 * acos(
+    //                 cos(radians($userLat)) *
+    //                 cos(radians(chefs.latitude)) *
+    //                 cos(radians(chefs.longitude) - radians($userLng)) +
+    //                 sin(radians($userLat)) *
+    //                 sin(radians(chefs.latitude))
+    //             ), 1) AS distance")
+    //         )
+    //         ->having('distance', '<', $radius)
+    //         ->orderBy('distance', 'asc');
 
-//     $chefIds = null;
-//     if ($cuisineTypeId) {
-//         $chefIds = DB::table('food_dishes')
-//             ->where('cuisine_type_id', $cuisineTypeId)
-//             ->pluck('chef_id')
-//             ->toArray();
-//     }
-//     $day = null;
-//     if ($request->has('date')) {
-//         $day = strtolower(\Carbon\Carbon::parse($request->input('date'))->format('l'));
-//     }
-//     $chefsQuery = DB::table('chefs')
-//         ->select(
-//             'chefs.id',
-//             'chefs.name',
-//             'chefs.business_name',
-//             'chefs.kitchen_type',
-//             'chefs.kitchen_name',
-//             'chefs.profile_image',
-//             'chefs.city as location',
-//             'chefs.address as address',
-//             'chefs.working_days',
-//             DB::raw("ROUND(6371 * acos(
-//                 cos(radians($userLat)) *
-//                 cos(radians(chefs.latitude)) *
-//                 cos(radians(chefs.longitude) - radians($userLng)) +
-//                 sin(radians($userLat)) *
-//                 sin(radians(chefs.latitude))
-//             ), 1) AS distance")
-//         )
-//         ->having('distance', '<', $radius)
-//         ->orderBy('distance', 'asc');
-
-//     if ($chefIds) {
-//         $chefsQuery->whereIn('chefs.id', $chefIds);
-//     }
-
-    
-//     if ($day) {
-//         $chefsQuery->whereJsonContains('chefs.working_days', $day);
-//     }
-    
-//     $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
-    
-//     $favourites = DB::table('favourite_chefs')
-//         ->where('user_id', $user->id)
-//         ->pluck('chef_id')
-//         ->toArray();
-
-//     $chefs->getCollection()->transform(function ($chef) use ($favourites) {
-//         $chef->distance = $chef->distance . ' km';
-//         $chef->profile_image = !empty($chef->profile_image) ? asset($chef->profile_image) : null;
-//         $chef->working_days = !empty($chef->working_days) ? json_decode($chef->working_days, true) : [];
-//         $chef->is_fav = in_array($chef->id, $favourites); // ðŸ‘ˆ yaha set ho gaya true/false
-//         return $chef;
-//     });
-//     if ($chefs->isEmpty()) {
-//         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
-//     }
-
-//     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
-// }
-
-// public function getNearbyChefs(Request $request)
-// {
-//     $user = Auth::user();
-
-//     // 1. Get selected user address
-//     $userAddress = DB::table('user_addresses')
-//         ->where('user_id', $user->id)
-//         ->where('is_selected', 1)
-//         ->first();
-
-//     if (!$userAddress) {
-//         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
-//     }
-
-//     $userLat = $userAddress->latitude;
-//     $userLng = $userAddress->longitude;
-
-//     $settings = \App\Models\Setting::select('radius_km')->first();
-//     $radius = $settings?->radius_km ?? 10;
-
-//     // âœ… Pagination params
-//     $perPage = $request->input('per_page', 10);
-//     $page    = $request->input('page', 1);
-
-//     // âœ… Cuisine filter (optional)
-//     $cuisineTypeId = $request->input('cuisine_type_id', null);
-
-//     $chefIds = null;
-//     if ($cuisineTypeId) {
-//         $chefIds = DB::table('food_dishes')
-//             ->where('cuisine_type_id', $cuisineTypeId)
-//             ->pluck('chef_id')
-//             ->toArray();
-//     }
-
-//     // âœ… Step 1: Single date se day nikaalo (lowercase me)
-//     $day = null;
-//     if ($request->has('date')) {
-//         $day = strtolower(\Carbon\Carbon::parse($request->input('date'))->format('l')); 
-//         // Example: "monday", "tuesday"
-//     }
-
-//     // 2. Get nearby chefs with pagination + filter
-//     $chefsQuery = DB::table('chefs')
-//         ->select(
-//             'chefs.id',
-//             'chefs.name',
-//             'chefs.business_name',
-//             'chefs.kitchen_type',
-//             'chefs.kitchen_name',
-//             'chefs.profile_image',
-//             'chefs.city as location',
-//             'chefs.address as address',
-//             // 'chefs.working_days',
-//             DB::raw("ROUND(6371 * acos(
-//                 cos(radians($userLat)) *
-//                 cos(radians(chefs.latitude)) *
-//                 cos(radians(chefs.longitude) - radians($userLng)) +
-//                 sin(radians($userLat)) *
-//                 sin(radians(chefs.latitude))
-//             ), 1) AS distance")
-//         )
-//         ->having('distance', '<', $radius)
-//         ->orderBy('distance', 'asc');
-
-//     // Agar cuisine filter ho toh
-//     if ($chefIds) {
-//         $chefsQuery->whereIn('chefs.id', $chefIds);
-//     }
-
-//     // âœ… Step 2: Working days filter (only one date â†’ one day)
-//     if ($day) {
-//         $chefsQuery->whereJsonContains('chefs.working_days', $day);
-//     }
-
-//     $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
-
-//     // âœ… Format distance + image
-//     $chefs->getCollection()->transform(function ($chef) {
-//         $chef->distance = $chef->distance . ' km';
-//         if (!empty($chef->profile_image)) {
-//             $chef->profile_image = asset($chef->profile_image);
-//         }
-
-//         if (!empty($chef->working_days)) {
-//             $chef->working_days = json_decode($chef->working_days, true);
-//         }
-
-//         return $chef;
-//     });
-
-//     // âœ… API response
-//     if ($chefs->isEmpty()) {
-//         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
-//     }
-
-//     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
-// }
+    //     if ($chefIds) {
+    //         $chefsQuery->whereIn('chefs.id', $chefIds);
+    //     }
 
 
-public function getPopularDishes(Request $request)
+    //     if ($day) {
+    //         $chefsQuery->whereJsonContains('chefs.working_days', $day);
+    //     }
+
+    //     $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
+
+    //     $favourites = DB::table('favourite_chefs')
+    //         ->where('user_id', $user->id)
+    //         ->pluck('chef_id')
+    //         ->toArray();
+
+    //     $chefs->getCollection()->transform(function ($chef) use ($favourites) {
+    //         $chef->distance = $chef->distance . ' km';
+    //         $chef->profile_image = !empty($chef->profile_image) ? asset($chef->profile_image) : null;
+    //         $chef->working_days = !empty($chef->working_days) ? json_decode($chef->working_days, true) : [];
+    //         $chef->is_fav = in_array($chef->id, $favourites); // ðŸ‘ˆ yaha set ho gaya true/false
+    //         return $chef;
+    //     });
+    //     if ($chefs->isEmpty()) {
+    //         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
+    //     }
+
+    //     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
+    // }
+
+    // public function getNearbyChefs(Request $request)
+    // {
+    //     $user = Auth::user();
+
+    //     // 1. Get selected user address
+    //     $userAddress = DB::table('user_addresses')
+    //         ->where('user_id', $user->id)
+    //         ->where('is_selected', 1)
+    //         ->first();
+
+    //     if (!$userAddress) {
+    //         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
+    //     }
+
+    //     $userLat = $userAddress->latitude;
+    //     $userLng = $userAddress->longitude;
+
+    //     $settings = \App\Models\Setting::select('radius_km')->first();
+    //     $radius = $settings?->radius_km ?? 10;
+
+    //     // âœ… Pagination params
+    //     $perPage = $request->input('per_page', 10);
+    //     $page    = $request->input('page', 1);
+
+    //     // âœ… Cuisine filter (optional)
+    //     $cuisineTypeId = $request->input('cuisine_type_id', null);
+
+    //     $chefIds = null;
+    //     if ($cuisineTypeId) {
+    //         $chefIds = DB::table('food_dishes')
+    //             ->where('cuisine_type_id', $cuisineTypeId)
+    //             ->pluck('chef_id')
+    //             ->toArray();
+    //     }
+
+    //     // âœ… Step 1: Single date se day nikaalo (lowercase me)
+    //     $day = null;
+    //     if ($request->has('date')) {
+    //         $day = strtolower(\Carbon\Carbon::parse($request->input('date'))->format('l')); 
+    //         // Example: "monday", "tuesday"
+    //     }
+
+    //     // 2. Get nearby chefs with pagination + filter
+    //     $chefsQuery = DB::table('chefs')
+    //         ->select(
+    //             'chefs.id',
+    //             'chefs.name',
+    //             'chefs.business_name',
+    //             'chefs.kitchen_type',
+    //             'chefs.kitchen_name',
+    //             'chefs.profile_image',
+    //             'chefs.city as location',
+    //             'chefs.address as address',
+    //             // 'chefs.working_days',
+    //             DB::raw("ROUND(6371 * acos(
+    //                 cos(radians($userLat)) *
+    //                 cos(radians(chefs.latitude)) *
+    //                 cos(radians(chefs.longitude) - radians($userLng)) +
+    //                 sin(radians($userLat)) *
+    //                 sin(radians(chefs.latitude))
+    //             ), 1) AS distance")
+    //         )
+    //         ->having('distance', '<', $radius)
+    //         ->orderBy('distance', 'asc');
+
+    //     // Agar cuisine filter ho toh
+    //     if ($chefIds) {
+    //         $chefsQuery->whereIn('chefs.id', $chefIds);
+    //     }
+
+    //     // âœ… Step 2: Working days filter (only one date â†’ one day)
+    //     if ($day) {
+    //         $chefsQuery->whereJsonContains('chefs.working_days', $day);
+    //     }
+
+    //     $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
+
+    //     // âœ… Format distance + image
+    //     $chefs->getCollection()->transform(function ($chef) {
+    //         $chef->distance = $chef->distance . ' km';
+    //         if (!empty($chef->profile_image)) {
+    //             $chef->profile_image = asset($chef->profile_image);
+    //         }
+
+    //         if (!empty($chef->working_days)) {
+    //             $chef->working_days = json_decode($chef->working_days, true);
+    //         }
+
+    //         return $chef;
+    //     });
+
+    //     // âœ… API response
+    //     if ($chefs->isEmpty()) {
+    //         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
+    //     }
+
+    //     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
+    // }
+
+
+    public function getPopularDishes(Request $request)
     {
         $user = Auth::user(); // âœ… token se user aayega
 
@@ -395,154 +395,154 @@ public function getPopularDishes(Request $request)
     }
 
 
- 
-//  public function getNearbyChefs(Request $request)
-// {
-//     $user = Auth::user();
 
-//     // 1. Get selected user address
-//     $userAddress = DB::table('user_addresses')
-//         ->where('user_id', $user->id)
-//         ->where('is_selected', 1)
-//         ->first();
+    //  public function getNearbyChefs(Request $request)
+    // {
+    //     $user = Auth::user();
 
-//     if (!$userAddress) {
-//         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
-//     }
+    //     // 1. Get selected user address
+    //     $userAddress = DB::table('user_addresses')
+    //         ->where('user_id', $user->id)
+    //         ->where('is_selected', 1)
+    //         ->first();
 
-//     $userLat = $userAddress->latitude;
-//     $userLng = $userAddress->longitude;
+    //     if (!$userAddress) {
+    //         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
+    //     }
 
-//     $settings = \App\Models\Setting::select('radius_km')->first();
-//     $radius = $settings?->radius_km ?? 10;
+    //     $userLat = $userAddress->latitude;
+    //     $userLng = $userAddress->longitude;
 
-//     // âœ… Pagination params
-//     $perPage = $request->input('per_page', 10);
-//     $page    = $request->input('page', 1);
+    //     $settings = \App\Models\Setting::select('radius_km')->first();
+    //     $radius = $settings?->radius_km ?? 10;
 
-//     // âœ… Cuisine filter (optional)
-//     $cuisineTypeId = $request->input('cuisine_type_id', null);
+    //     // âœ… Pagination params
+    //     $perPage = $request->input('per_page', 10);
+    //     $page    = $request->input('page', 1);
 
-//     // Agar cuisine_type_id diya gaya hai toh related chef_id nikaalo
-//     $chefIds = null;
-//     if ($cuisineTypeId) {
-//         $chefIds = DB::table('food_dishes')
-//             ->where('cuisine_type_id', $cuisineTypeId)
-//             ->pluck('chef_id')
-//             ->toArray();
-//     }
+    //     // âœ… Cuisine filter (optional)
+    //     $cuisineTypeId = $request->input('cuisine_type_id', null);
 
-//     // 2. Get nearby chefs with pagination + filter
-//     $chefsQuery = DB::table('chefs')
-//         ->select(
-//             'chefs.id',
-//             'chefs.name',
-//             'chefs.business_name',
-//             'chefs.kitchen_type',
-//             'chefs.kitchen_name',
-//             'chefs.profile_image',
-//             'chefs.city as location',
-//             'chefs.address as address',
-//             DB::raw("ROUND(6371 * acos(
-//                 cos(radians($userLat)) *
-//                 cos(radians(chefs.latitude)) *
-//                 cos(radians(chefs.longitude) - radians($userLng)) +
-//                 sin(radians($userLat)) *
-//                 sin(radians(chefs.latitude))
-//             ), 1) AS distance")
-//         )
-//         ->having('distance', '<', $radius)
-//         ->orderBy('distance', 'asc');
+    //     // Agar cuisine_type_id diya gaya hai toh related chef_id nikaalo
+    //     $chefIds = null;
+    //     if ($cuisineTypeId) {
+    //         $chefIds = DB::table('food_dishes')
+    //             ->where('cuisine_type_id', $cuisineTypeId)
+    //             ->pluck('chef_id')
+    //             ->toArray();
+    //     }
 
-//     // Agar cuisine filter ho toh uske hisaab se chefs filter karo
-//     if ($chefIds) {
-//         $chefsQuery->whereIn('chefs.id', $chefIds);
-//     }
+    //     // 2. Get nearby chefs with pagination + filter
+    //     $chefsQuery = DB::table('chefs')
+    //         ->select(
+    //             'chefs.id',
+    //             'chefs.name',
+    //             'chefs.business_name',
+    //             'chefs.kitchen_type',
+    //             'chefs.kitchen_name',
+    //             'chefs.profile_image',
+    //             'chefs.city as location',
+    //             'chefs.address as address',
+    //             DB::raw("ROUND(6371 * acos(
+    //                 cos(radians($userLat)) *
+    //                 cos(radians(chefs.latitude)) *
+    //                 cos(radians(chefs.longitude) - radians($userLng)) +
+    //                 sin(radians($userLat)) *
+    //                 sin(radians(chefs.latitude))
+    //             ), 1) AS distance")
+    //         )
+    //         ->having('distance', '<', $radius)
+    //         ->orderBy('distance', 'asc');
 
-//     $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
+    //     // Agar cuisine filter ho toh uske hisaab se chefs filter karo
+    //     if ($chefIds) {
+    //         $chefsQuery->whereIn('chefs.id', $chefIds);
+    //     }
 
-//     // âœ… Format distance + image
-//     $chefs->getCollection()->transform(function ($chef) {
-//         $chef->distance = $chef->distance . ' km';
-//         if (!empty($chef->profile_image)) {
-//             $chef->profile_image = asset($chef->profile_image);
-//         }
-//         return $chef;
-//     });
+    //     $chefs = $chefsQuery->paginate($perPage, ['*'], 'page', $page);
 
-//     // âœ… API response
-//     if ($chefs->isEmpty()) {
-//         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
-//     }
+    //     // âœ… Format distance + image
+    //     $chefs->getCollection()->transform(function ($chef) {
+    //         $chef->distance = $chef->distance . ' km';
+    //         if (!empty($chef->profile_image)) {
+    //             $chef->profile_image = asset($chef->profile_image);
+    //         }
+    //         return $chef;
+    //     });
 
-//     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
-// }
+    //     // âœ… API response
+    //     if ($chefs->isEmpty()) {
+    //         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
+    //     }
+
+    //     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
+    // }
 
 
 
-// public function getNearbyChefs(Request $request)
-// {
-//     $user = Auth::user();
+    // public function getNearbyChefs(Request $request)
+    // {
+    //     $user = Auth::user();
 
-//     // 1. Get selected user address
-//     $userAddress = DB::table('user_addresses')
-//         ->where('user_id', $user->id)
-//         ->where('is_selected', 1)
-//         ->first();
+    //     // 1. Get selected user address
+    //     $userAddress = DB::table('user_addresses')
+    //         ->where('user_id', $user->id)
+    //         ->where('is_selected', 1)
+    //         ->first();
 
-//     if (!$userAddress) {
-//         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
-//     }
+    //     if (!$userAddress) {
+    //         return CommonHelper::apiResponse(404, false, 'Selected user address not found.', null);
+    //     }
 
-//     $userLat = $userAddress->latitude;
-//     $userLng = $userAddress->longitude;
+    //     $userLat = $userAddress->latitude;
+    //     $userLng = $userAddress->longitude;
 
-//     $settings = \App\Models\Setting::select('radius_km')->first();
-//     $radius = $settings?->radius_km ?? 10;
+    //     $settings = \App\Models\Setting::select('radius_km')->first();
+    //     $radius = $settings?->radius_km ?? 10;
 
-//     // âœ… Pagination params
-//     $perPage = $request->input('per_page', 10);
-//     $page    = $request->input('page', 1);
+    //     // âœ… Pagination params
+    //     $perPage = $request->input('per_page', 10);
+    //     $page    = $request->input('page', 1);
 
-//     // 2. Get nearby chefs with pagination
-//     $chefs = DB::table('chefs')
-//         ->select(
-//             'chefs.id',
-//             'chefs.name',
-//             'chefs.business_name',
-//             'chefs.kitchen_type',
-//             'chefs.kitchen_name',
-//             'chefs.profile_image',
-//             'chefs.city as location',
-//             'chefs.address as address',
-//             DB::raw("ROUND(6371 * acos(
-//                 cos(radians($userLat)) *
-//                 cos(radians(chefs.latitude)) *
-//                 cos(radians(chefs.longitude) - radians($userLng)) +
-//                 sin(radians($userLat)) *
-//                 sin(radians(chefs.latitude))
-//             ), 1) AS distance")
-//         )
-//         ->having('distance', '<', $radius)
-//         ->orderBy('distance', 'asc')
-//         ->paginate($perPage, ['*'], 'page', $page);
+    //     // 2. Get nearby chefs with pagination
+    //     $chefs = DB::table('chefs')
+    //         ->select(
+    //             'chefs.id',
+    //             'chefs.name',
+    //             'chefs.business_name',
+    //             'chefs.kitchen_type',
+    //             'chefs.kitchen_name',
+    //             'chefs.profile_image',
+    //             'chefs.city as location',
+    //             'chefs.address as address',
+    //             DB::raw("ROUND(6371 * acos(
+    //                 cos(radians($userLat)) *
+    //                 cos(radians(chefs.latitude)) *
+    //                 cos(radians(chefs.longitude) - radians($userLng)) +
+    //                 sin(radians($userLat)) *
+    //                 sin(radians(chefs.latitude))
+    //             ), 1) AS distance")
+    //         )
+    //         ->having('distance', '<', $radius)
+    //         ->orderBy('distance', 'asc')
+    //         ->paginate($perPage, ['*'], 'page', $page);
 
-//     // âœ… Format distance + image using transform (without breaking pagination meta)
-//     $chefs->getCollection()->transform(function ($chef) {
-//         $chef->distance = $chef->distance . ' km';
-//         if (!empty($chef->profile_image)) {
-//             $chef->profile_image = asset($chef->profile_image);
-//         }
-//         return $chef;
-//     });
+    //     // âœ… Format distance + image using transform (without breaking pagination meta)
+    //     $chefs->getCollection()->transform(function ($chef) {
+    //         $chef->distance = $chef->distance . ' km';
+    //         if (!empty($chef->profile_image)) {
+    //             $chef->profile_image = asset($chef->profile_image);
+    //         }
+    //         return $chef;
+    //     });
 
-//     // âœ… API response with pagination
-//     if ($chefs->isEmpty()) {
-//         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
-//     }
+    //     // âœ… API response with pagination
+    //     if ($chefs->isEmpty()) {
+    //         return CommonHelper::apiResponse(404, false, 'No nearby chefs found.', []);
+    //     }
 
-//     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
-// }
+    //     return CommonHelper::apiResponse(200, true, 'Nearby chefs fetched successfully.', $chefs);
+    // }
 
 
 
@@ -589,8 +589,8 @@ public function getPopularDishes(Request $request)
     //     //     ->having('distance', '<', $radius)
     //     //     ->orderBy('distance', 'asc')
     //     //     ->get();
-        
-        
+
+
     //     $chefs = DB::table('chefs')
     //         ->select(
     //             'chefs.*',

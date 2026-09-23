@@ -134,7 +134,7 @@ class ChefPayoutService
 
         return $orderDate->copy()->startOfMonth()->addMonth()->day(7)->startOfDay();
     }
-    
+
     public function retryPayout(int $payoutId): array
     {
         $payout = Payout::find($payoutId);
@@ -184,8 +184,7 @@ class ChefPayoutService
     protected function processIndividualPayout($chef, $totalEarnings, $orders): array
     {
         // Single source of truth: 90% of menu base price (every item + quantity),
-        // 10% held as security — matches the admin Payout page and the
-        // earnings-overview API exactly.
+        // with 10% retained as the security deposit.
         $breakdown = \App\Helpers\CommonHelper::chefPayoutBreakdown($orders, $chef->commission ?? 0);
         $chefBaseTotal        = $breakdown['dish_total'];
         $totalSecurityDeposit = $breakdown['security'];
@@ -227,7 +226,7 @@ class ChefPayoutService
                 'chef_id' => $chef->id,
                 'total_earning' => $chefBaseTotal,       // ₹249.00 (Base)
                 'commission_amount' => $totalSecurityDeposit, // ₹24.90 (Security)
-                'payout_amount' => $netPayout,           // ₹224.10 (Hand cash)
+                'payout_amount' => $netPayout,           // 90% paid to the chef
                 'razorpay_payout_id' => $payoutResponse['id'],
                 'razorpay_fund_account_id' => $fundAccountId,
                 'status' => 'processing',
