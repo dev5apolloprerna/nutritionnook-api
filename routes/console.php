@@ -12,10 +12,10 @@ Schedule::command('orders:send-scheduled-push')
     });
 
 // Run specifically on the 7th at 10:00 AM
-Schedule::command('payout:auto-chefs')->monthlyOn(7, '10:00');
+Schedule::command('payout:auto-chefs')->monthlyOn(7, '10:00')->withoutOverlapping();
 
 // Run specifically on the 22nd at 10:00 AM
-Schedule::command('payout:auto-chefs')->monthlyOn(22, '10:00');
+Schedule::command('payout:auto-chefs')->monthlyOn(22, '10:00')->withoutOverlapping();
 
 Schedule::command('orders:update-buffer-status')->everyMinute();
 

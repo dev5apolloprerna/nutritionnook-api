@@ -38,10 +38,7 @@ public function markPaid(Request $request, $chef_id)
         $chef = Chef::findOrFail($chef_id);
         $commRate = $chef->commission ?? 0;
 
-        $unpaidOrders = Order::where('chef_id', $chef_id)
-            ->where('status', 'delivered')
-            ->where('is_payout_completed', 0)
-            ->get();
+        $unpaidOrders = $this->payoutService->eligibleUnpaidOrders($chef_id);
 
         if ($unpaidOrders->isEmpty()) {
             return redirect()->back()->with('error', 'No pending orders found.');
@@ -175,10 +172,7 @@ public function markPaid(Request $request, $chef_id)
     foreach ($chefs as $chef) {
         $commRate = $chef->commission ?? 0; // દા.ત. 29%
 
-        $unpaidOrders = Order::where('chef_id', $chef->id)
-            ->where('status', 'delivered')
-            ->where('is_payout_completed', 0)
-            ->get();
+        $unpaidOrders = $this->payoutService->eligibleUnpaidOrders($chef->id);
 
         // Single source of truth (every item + quantity, 90/10 split).
         $breakdown = CommonHelper::chefPayoutBreakdown($unpaidOrders, $commRate);

@@ -37,23 +37,7 @@ class ChefPayoutService
         $results = ['processed' => 0, 'skipped' => 0, 'failed' => 0, 'details' => []];
 
         foreach ($chefs as $chef) {
-            $alreadyPaid = Payout::where('chef_id', $chef->id)
-                ->whereIn('status', ['success', 'processing', 'completed'])
-                ->where('payout_month', $now->month)
-                ->where('payout_year', $now->year)
-                ->exists();
-
-            if ($alreadyPaid) {
-                $results['skipped']++;
-                $results['details'][] = "Chef #{$chef->id} ({$chef->name}): Skipped - already paid this period";
-                Log::info("Payout skipped: Chef #{$chef->id} already paid for " . $now->format('F Y'));
-                continue;
-            }
-
-            $unpaidOrders = Order::where('chef_id', $chef->id)
-                ->where('status', 'delivered')
-                ->where('is_payout_completed', 0)
-                ->get();
+            $unpaidOrders = $this->eligibleUnpaidOrders($chef->id, $now);
 
             // સાચી ગણતરી: Base Price (Amount - Fee - GST)
             $totalBaseEarnings = $unpaidOrders->sum('amount') - ($unpaidOrders->sum('platform_fee') + $unpaidOrders->sum('calculated_gst'));
@@ -90,10 +74,7 @@ class ChefPayoutService
             return ['success' => false, 'error' => 'Chef bank details incomplete (account number or IFSC missing)'];
         }
 
-        $unpaidOrders = Order::where('chef_id', $chef->id)
-            ->where('status', 'delivered')
-            ->where('is_payout_completed', 0)
-            ->get();
+        $unpaidOrders = $this->eligibleUnpaidOrders($chef->id);
 
         $totalBaseEarnings = $unpaidOrders->sum('amount') - ($unpaidOrders->sum('platform_fee') + $unpaidOrders->sum('calculated_gst'));
 
@@ -102,6 +83,40 @@ class ChefPayoutService
         }
 
         return $this->processIndividualPayout($chef, $totalBaseEarnings, $unpaidOrders);
+    }
+
+    /**
+     * Return delivered, unpaid orders whose payout cycle has matured.
+     *
+     * The 7th run pays orders dated through the end of the previous month.
+     * The 22nd run pays orders dated through the 15th of the current month.
+     * Using an upper bound also carries missed older orders into the next run.
+     */
+    public function eligibleUnpaidOrders(int $chefId, ?Carbon $asOf = null)
+    {
+        $cutoff = self::payoutOrderCutoff($asOf ?? Carbon::now());
+
+        return Order::where('chef_id', $chefId)
+            ->where('status', 'delivered')
+            ->where('is_payout_completed', 0)
+            ->whereDate('date', '<=', $cutoff->toDateString())
+            ->get();
+    }
+
+    /**
+     * Get the latest order date eligible at the most recent payout run.
+     */
+    public static function payoutOrderCutoff(Carbon $asOf): Carbon
+    {
+        if ($asOf->day >= 22) {
+            return $asOf->copy()->day(15)->endOfDay();
+        }
+
+        if ($asOf->day >= 7) {
+            return $asOf->copy()->subMonthNoOverflow()->endOfMonth()->endOfDay();
+        }
+
+        return $asOf->copy()->subMonthNoOverflow()->day(15)->endOfDay();
     }
 
     public function retryPayout(int $payoutId): array
