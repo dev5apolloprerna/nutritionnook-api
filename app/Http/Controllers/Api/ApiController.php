@@ -599,7 +599,7 @@ class ApiController extends Controller
         $commRate = $chef->commission ?? 0;
         $now = Carbon::now();
 
-        // Chef net payout (90% of menu base price, 10% security) for DELIVERED
+        // Chef payout (the full menu base-price total) for DELIVERED // Chef net payout (90% of menu base price, 10% security) for DELIVERED
         // orders in a window — same basis as the admin Payout page, the actual
         // payout, and the earnings-overview API. Counts every item + quantity.
         $periodPayout = function ($start, $end) use ($chefId, $commRate) {
@@ -756,7 +756,7 @@ class ApiController extends Controller
         $fromDate = $request->from_date;
         $toDate   = $request->to_date;
 
-        // Chef's net payout (90% of the menu base price, 10% held as security) for
+        // Chef's payout (the full menu base-price total) for // Chef's net payout (90% of the menu base price, 10% held as security) for
         // DELIVERED orders in a date window — the SAME basis as the admin Payout
         // page and the actual bank payout. Uses CommonHelper::chefPayoutBreakdown
         // so every item + quantity in the order is counted.
@@ -2574,11 +2574,12 @@ class ApiController extends Controller
                 $subtotal += $lineTotal;
 
                 $items[] = [
-                    'id'       => $food->id,
-                    'name'     => $food->name,
-                    'price'    => round($price),
-                    'quantity' => $item['quantity'],
-                    'total'    => round($lineTotal),
+                    'id'         => $food->id,
+                    'name'       => $food->name,
+                    'price'      => round($price),
+                    'base_price' => $basePrice,
+                    'quantity'   => $item['quantity'],
+                    'total'      => round($lineTotal),
                 ];
             }
 

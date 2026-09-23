@@ -320,9 +320,13 @@ public function searchFoodItems(Request $request)
         ->select(
             'fd.*',
             \DB::raw("CONCAT('https://api.nutritionnook.net/', fd.image) AS image"),
-            'c.title as category_name'
+            \DB::raw("(
+                SELECT GROUP_CONCAT(c.title ORDER BY FIND_IN_SET(c.id, REPLACE(fd.category_id, ' ', '')) SEPARATOR ', ')
+                FROM categories AS c
+                WHERE FIND_IN_SET(c.id, REPLACE(fd.category_id, ' ', ''))
+            ) AS category_name")
         )
-        ->join('categories as c', 'fd.category_id', '=', 'c.id')
+        //->join('categories as c', 'fd.category_id', '=', 'c.id')
         // ->where('fd.in_stock','1')
         ->where('fd.chef_id', $user->id);
 
@@ -336,7 +340,10 @@ public function searchFoodItems(Request $request)
 
     // ✅ Category filter
     if ($categoryId !== "all" && $categoryId != 0 && $categoryId != 8) {
-        $query->where('fd.category_id', $categoryId);
+        $query->whereRaw(
+            "FIND_IN_SET(?, REPLACE(fd.category_id, ' ', ''))",
+            [$categoryId]
+        );
     }
 
     // ✅ In-stock & Recommended filters
