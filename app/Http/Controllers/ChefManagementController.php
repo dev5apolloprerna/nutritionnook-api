@@ -213,8 +213,11 @@ public function toggleVerify(Request $request)
     
     $data = $request->except(['profile_image','cover_image']);
     
-    // Convert array fields to JSON
-    $data['working_days'] = !empty($request->working_days) ? json_encode($request->working_days) : json_encode([]);
+    // // Convert array fields to JSON
+    // $data['working_days'] = !empty($request->working_days) ? json_encode($request->working_days) : json_encode([]);
+    // Chef casts working_days to JSON; passing an encoded string here would
+    // encode it a second time and break JSON membership queries.
+    $data['working_days'] = $request->input('working_days', []);
     $data['preference_tags'] = !empty($request->preference_tags) ? json_encode($request->preference_tags) : json_encode([]);
     
     // Handle profile image
@@ -362,8 +365,10 @@ public function toggleVerify(Request $request)
 
     $data = $request->except(['profile_image','cover_image']);
     
-    // Convert array fields to JSON
-    $data['working_days'] = !empty($request->working_days) ? json_encode($request->working_days) : json_encode([]);
+    // // Convert array fields to JSON
+    // $data['working_days'] = !empty($request->working_days) ? json_encode($request->working_days) : json_encode([]);
+    // Let the Chef model's array cast encode working_days exactly once.
+    $data['working_days'] = $request->input('working_days', []);
     $data['preference_tags'] = !empty($request->preference_tags) ? json_encode($request->preference_tags) : json_encode([]);
     
     // Handle profile image

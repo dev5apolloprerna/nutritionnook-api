@@ -59,7 +59,7 @@ class NearByChefsController extends Controller
         $cuisineTypeId = $request->input('cuisine_type_id');
 
         
-        // 5️⃣ Date → Day
+        // 5️⃣ Date → working day
         $day = null;
         if ($request->filled('date')) {
             $day = strtolower(\Carbon\Carbon::parse($request->date)->format('l'));
@@ -101,9 +101,20 @@ class NearByChefsController extends Controller
             });
         }
 
-        // 👉 Working day filter
+        // Only show chefs who work on the requested date. A chef with every day
+        // selected matches this condition; this filter does not limit the result
+        // to a fixed number of chefs.
         if ($day) {
-            $chefsQuery->whereJsonContains('chefs.working_days', $day);
+            //$chefsQuery->whereJsonContains('chefs.working_days', $day);
+            $chefsQuery->where(function ($query) use ($day) {
+                $query->whereJsonContains('chefs.working_days', $day)
+                    // Some existing records were JSON-encoded twice by the admin
+                    // form. Keep them searchable until those rows are edited.
+                    ->orWhereRaw(
+                        'LOWER(JSON_UNQUOTE(chefs.working_days)) LIKE ?',
+                        ['%"' . $day . '"%']
+                    );
+            });
         }
 
         // 7️⃣ Pagination
