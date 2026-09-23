@@ -12,6 +12,7 @@ use App\Models\FoodDish;
 use DB;
 use Illuminate\Http\Request;
 use App\Services\RefundService;
+use Carbon\Carbon;
 
 class OrderManagementController extends Controller
 {
@@ -36,67 +37,100 @@ class OrderManagementController extends Controller
 
     //     return view('admin.orders.list', compact('orders'));
     // }
-    
+
     public function index(Request $request)
-{
-    // Status filter aaya to filter karo
-    $status = $request->get('status');
+    {
+        // Status filter aaya to filter karo
+        $status = $request->get('status');
+        $tab = $request->get('tab', 'today');
 
-    $query = Order::with(['chef', 'user'])
-        ->where('payment_status', '!=', 'pending') // ✅ pending skip
-        ->latest();
-
-    if ($status && $status !== 'all') {
-        $query->where('status', $status);
-    }
-
-    $orders = $query->get();
-
-    foreach ($orders as $order) {
-        // ✅ Agar items array nahi hai to decode karo
-        $itemsRaw = is_array($order->items) ? $order->items : json_decode($order->items, true);
-
-        $itemDetails = [];
-        $subtotal = 0;
-
-        if (is_array($itemsRaw)) {
-            foreach ($itemsRaw as $item) {
-                $dish = FoodDish::find($item['id']);
-                if ($dish) {
-                    $qty = $item['quantity'] ?? 1;
-                    $price = $dish->price ?? 0;
-                    $subtotal += $price * $qty;
-                    $itemDetails[] = $dish->name . ' (' . $qty . ')';
-                }
-            }
+        if (!in_array($tab, ['today', 'pre_orders', 'completed'], true)) {
+            $tab = 'today';
         }
 
-        $order->items_text = implode(', ', $itemDetails);
+        $today = Carbon::today();
+        $completedStatuses = ['delivered', 'rejected'];
 
-        // ✅ Delivery Fee (optional — static)
-        $delivery_fee = 0;
+        $tabCounts = [
+            'today' => Order::where('payment_status', '!=', 'pending')
+                ->whereDate('date', $today)
+                ->whereNotIn('status', $completedStatuses)
+                ->count(),
+            'pre_orders' => Order::where('payment_status', '!=', 'pending')
+                ->whereDate('date', '>', $today)
+                ->whereNotIn('status', $completedStatuses)
+                ->count(),
+            'completed' => Order::where('payment_status', '!=', 'pending')
+                ->whereIn('status', $completedStatuses)
+                ->count(),
+        ];
 
-        // ✅ GST setting (database se fetch)
-        $gstSetting = \DB::table('settings')->value('gst'); // Example: "5%"
-        $gstValue = (float) str_replace('%', '', $gstSetting ?? 0);
+        $query = Order::with(['chef', 'user'])
+            // ->where('payment_status', '!=', 'pending') // ✅ pending skip
+            // ->latest();
+            ->where('payment_status', '!=', 'pending'); // ✅ pending skip
 
-        // ✅ GST amount calculate
-        $gstAmount = ($subtotal * $gstValue) / 100;
+        if ($tab === 'pre_orders') {
+            $query->whereDate('date', '>', $today)
+                ->whereNotIn('status', $completedStatuses);
+        } elseif ($tab === 'completed') {
+            $query->whereIn('status', $completedStatuses);
+        } else {
+            $query->whereDate('date', $today)
+                ->whereNotIn('status', $completedStatuses);
+        }
 
-        // ✅ Total amount
-        $total = $subtotal + $delivery_fee + $gstAmount;
-        
-        $platformFee = \DB::table('settings')->first()->platform_fee ?? 0;
-        
-       
-        $total += $platformFee;
+        if ($status && $status !== 'all') {
+            $query->where('status', $status);
+        }
 
-        // ✅ Assign total for Blade file
-        $order->total_amount = round($total);
+        $orders = $query->latest()->get();
+
+        foreach ($orders as $order) {
+            // ✅ Agar items array nahi hai to decode karo
+            $itemsRaw = is_array($order->items) ? $order->items : json_decode($order->items, true);
+
+            $itemDetails = [];
+            $subtotal = 0;
+
+            if (is_array($itemsRaw)) {
+                foreach ($itemsRaw as $item) {
+                    $dish = FoodDish::find($item['id']);
+                    if ($dish) {
+                        $qty = $item['quantity'] ?? 1;
+                        $price = $dish->price ?? 0;
+                        $subtotal += $price * $qty;
+                        $itemDetails[] = $dish->name . ' (' . $qty . ')';
+                    }
+                }
+            }
+
+            $order->items_text = implode(', ', $itemDetails);
+
+            // ✅ Delivery Fee (optional — static)
+            $delivery_fee = 0;
+
+            // ✅ GST setting (database se fetch)
+            $gstSetting = \DB::table('settings')->value('gst'); // Example: "5%"
+            $gstValue = (float) str_replace('%', '', $gstSetting ?? 0);
+
+            // ✅ GST amount calculate
+            $gstAmount = ($subtotal * $gstValue) / 100;
+
+            // ✅ Total amount
+            $total = $subtotal + $delivery_fee + $gstAmount;
+
+            $platformFee = \DB::table('settings')->first()->platform_fee ?? 0;
+
+
+            $total += $platformFee;
+
+            // ✅ Assign total for Blade file
+            $order->total_amount = round($total);
+        }
+
+        return view('admin.orders.list', compact('orders', 'status', 'tab', 'tabCounts'));
     }
-
-    return view('admin.orders.list', compact('orders', 'status'));
-}
 
 
     // public function show($id)
@@ -177,88 +211,87 @@ class OrderManagementController extends Controller
     //     $order = $orderDetails[$id] ?? abort(404);
     //     return view('admin.orders.show', compact('order', 'id'));
     // }
-    
-public function refund(Request $request)
-{
-    
-    $request->validate([
-        'order_id' => 'required|exists:orders,id',
-    ]);
 
-    $order = Order::findOrFail($request->order_id);
-    
+    public function refund(Request $request)
+    {
 
-    try {
-
-        // ── Step 1: Force 100% refund ────────────────────────────
-        $refundPercentage = 100;
-        $refundMessage = 'Your refund has been successfully initiated and will be credited within 5-7 business days.';
-
-        // Optional: store in DB
-        $order->refund_percentage = $refundPercentage;
-        $order->rejected_by = 'admin'; // or 'system'
-        $order->save();
-
-        // ── Step 2: Prepare shared data (SAME as rejected flow) ──
-        $user  = DB::table('users')->where('id', $order->user_id)->first();
-        $chef  = DB::table('chefs')->where('id', $order->chef_id)->first();
-
-        $items = is_array($order->items) 
-            ? $order->items 
-            : json_decode($order->items, true);
-
-        $items     = $items ?? [];
-        $foodImage = $this->getOrderFoodImage($items);
-        $logo      = $this->getAppLogo();
-
-        // ── Step 3: Notifications ────────────────────────────────
-        $this->sendRejectionNotifications(
-            $order,
-            $user,
-            $chef,
-            $items,
-            $refundPercentage,
-            $refundMessage,
-            $logo,
-            $foodImage
-        );
-
-        // ── Step 4: Emails ───────────────────────────────────────
-        $this->sendRejectionEmails(
-            $order,
-            $user,
-            $chef,
-            $items,
-            $refundPercentage,
-            $refundMessage
-        );
-
-        // ── Step 5: Process refund (IMPORTANT) ───────────────────
-        $this->processRefund(
-            $order,
-            $user,
-            $refundPercentage,
-            $refundMessage
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Refund initiated successfully. 100% amount will be credited to the customer.',
-            'refund_percentage' => $refundPercentage,
-            'refund_message' => $refundMessage,
+        $request->validate([
+            'order_id' => 'required|exists:orders,id',
         ]);
 
-    } catch (\Exception $e) {
+        $order = Order::findOrFail($request->order_id);
 
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 400);
+
+        try {
+
+            // ── Step 1: Force 100% refund ────────────────────────────
+            $refundPercentage = 100;
+            $refundMessage = 'Your refund has been successfully initiated and will be credited within 5-7 business days.';
+
+            // Optional: store in DB
+            $order->refund_percentage = $refundPercentage;
+            $order->rejected_by = 'admin'; // or 'system'
+            $order->save();
+
+            // ── Step 2: Prepare shared data (SAME as rejected flow) ──
+            $user  = DB::table('users')->where('id', $order->user_id)->first();
+            $chef  = DB::table('chefs')->where('id', $order->chef_id)->first();
+
+            $items = is_array($order->items)
+                ? $order->items
+                : json_decode($order->items, true);
+
+            $items     = $items ?? [];
+            $foodImage = $this->getOrderFoodImage($items);
+            $logo      = $this->getAppLogo();
+
+            // ── Step 3: Notifications ────────────────────────────────
+            $this->sendRejectionNotifications(
+                $order,
+                $user,
+                $chef,
+                $items,
+                $refundPercentage,
+                $refundMessage,
+                $logo,
+                $foodImage
+            );
+
+            // ── Step 4: Emails ───────────────────────────────────────
+            $this->sendRejectionEmails(
+                $order,
+                $user,
+                $chef,
+                $items,
+                $refundPercentage,
+                $refundMessage
+            );
+
+            // ── Step 5: Process refund (IMPORTANT) ───────────────────
+            $this->processRefund(
+                $order,
+                $user,
+                $refundPercentage,
+                $refundMessage
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Refund initiated successfully. 100% amount will be credited to the customer.',
+                'refund_percentage' => $refundPercentage,
+                'refund_message' => $refundMessage,
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
-}
 
 
-public function handle(Request $request)
+    public function handle(Request $request)
     {
         $payload = $request->getContent();
         $signature = $request->header('X-Razorpay-Signature');
@@ -268,7 +301,7 @@ public function handle(Request $request)
         try {
             $api->utility->verifyWebhookSignature($payload, $signature, config('services.razorpay.webhook_secret'));
         } catch (\Exception $e) {
-            return response()->json(['status'=>'invalid'], 400);
+            return response()->json(['status' => 'invalid'], 400);
         }
 
         $event = json_decode($payload, true);
@@ -290,87 +323,87 @@ public function handle(Request $request)
                 ]);
         }
 
-        return response()->json(['status'=>'ok']);
+        return response()->json(['status' => 'ok']);
     }
 
     public function show($id)
-{
-    // Order fetch karo
-    $order = Order::with(['chef', 'user'])->findOrFail($id);
+    {
+        // Order fetch karo
+        $order = Order::with(['chef', 'user'])->findOrFail($id);
 
-    // Items handle karo
-    $itemsRaw = is_array($order->items) ? $order->items : json_decode($order->items, true);
-    $items = [];
-    foreach ($itemsRaw as $item) {
-        $price = (float) ($item['price'] ?? 0);
-        $qty   = (int) ($item['quantity'] ?? 1);
-        $items[] = [
-            'name'  => $item['name'] ?? 'Unknown Item',
-            'qty'   => $qty,
-            'price' => $price,
-            'total' => $price * $qty,
-            'image' => $item['image'] ?? asset('images/placeholder.png'),
+        // Items handle karo
+        $itemsRaw = is_array($order->items) ? $order->items : json_decode($order->items, true);
+        $items = [];
+        foreach ($itemsRaw as $item) {
+            $price = (float) ($item['price'] ?? 0);
+            $qty   = (int) ($item['quantity'] ?? 1);
+            $items[] = [
+                'name'  => $item['name'] ?? 'Unknown Item',
+                'qty'   => $qty,
+                'price' => $price,
+                'total' => $price * $qty,
+                'image' => $item['image'] ?? asset('images/placeholder.png'),
+            ];
+        }
+
+        // --- Price Calculation (Database mathi direct lo) ---
+        $subtotal    = array_sum(array_column($items, 'total'));
+        $platformFee = (float) ($order->platform_fee ?? 0); // Database mathi order specific fee
+        $gstAmount   = (float) ($order->calculated_gst ?? 0); // Database mathi direct GST amount
+        $gstSetting  = \DB::table('settings')->value('gst') ?? '5%';
+
+        // Final Amount direct order table mathi lo, calculation ma bhul na thay
+        $total = (float) $order->amount;
+
+        // --- Payment Details ---
+        $payment = is_array($order->payment) ? $order->payment : json_decode($order->payment, true);
+        $payment = $payment ?? [
+            'method' => $order->payment_method ?? 'Unknown',
+            'status' => $order->payment_status ?? 'N/A',
+            'paidAt' => $order->paid_at
         ];
+
+        // Address logic
+        $selectedAddress = \DB::table('user_addresses')
+            ->where('user_id', $order->user_id)
+            ->where('is_selected', 1)
+            ->first();
+
+        $customer = [
+            'name'    => $order->user->name ?? 'Guest User',
+            'email'   => $order->user->email ?? 'guest@example.com',
+            'phone'   => $order->user->phone_number ?? 'N/A',
+            'avatar'  => asset('/images/user-image.png'),
+            'address' => $selectedAddress->full_address ?? ($order->address ?? 'No Address Found'),
+            'pincode' => $selectedAddress->pincode ?? 'N/A',
+            'tag'     => $selectedAddress->tag ?? 'N/A',
+        ];
+
+        $deliveryBoy = [
+            'name'   => 'John Doe',
+            'avatar' => asset('/images/user-image.png'),
+            'phone'  => '9876543210',
+            'vehicle' => 'Bike',
+            'rating' => 4.5,
+        ];
+
+        $history = \DB::table('order_status_histories')
+            ->where('order_id', $order->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $tracking = $history->map(function ($row, $index) use ($history) {
+            return [
+                'status' => ucfirst($row->status),
+                'time'   => \Carbon\Carbon::parse($row->created_at)->format('d M Y, h:i A'),
+                'active' => $index == $history->count() - 1,
+            ];
+        });
+
+        return view('admin.orders.show', compact('order', 'items', 'subtotal', 'platformFee', 'total', 'payment', 'customer', 'deliveryBoy', 'gstAmount', 'gstSetting', 'tracking', 'selectedAddress'));
     }
 
-    // --- Price Calculation (Database mathi direct lo) ---
-    $subtotal    = array_sum(array_column($items, 'total'));
-    $platformFee = (float) ($order->platform_fee ?? 0); // Database mathi order specific fee
-    $gstAmount   = (float) ($order->calculated_gst ?? 0); // Database mathi direct GST amount
-    $gstSetting  = \DB::table('settings')->value('gst') ?? '5%'; 
-    
-    // Final Amount direct order table mathi lo, calculation ma bhul na thay
-    $total = (float) $order->amount; 
-
-    // --- Payment Details ---
-    $payment = is_array($order->payment) ? $order->payment : json_decode($order->payment, true);
-    $payment = $payment ?? [
-        'method' => $order->payment_method ?? 'Unknown',
-        'status' => $order->payment_status ?? 'N/A',
-        'paidAt' => $order->paid_at
-    ];
-        
-    // Address logic
-    $selectedAddress = \DB::table('user_addresses')
-        ->where('user_id', $order->user_id)
-        ->where('is_selected', 1)
-        ->first();
-
-    $customer = [
-        'name'    => $order->user->name ?? 'Guest User',
-        'email'   => $order->user->email ?? 'guest@example.com',
-        'phone'   => $order->user->phone_number ?? 'N/A',
-        'avatar'  => asset('/images/user-image.png'),
-        'address' => $selectedAddress->full_address ?? ($order->address ?? 'No Address Found'),
-        'pincode' => $selectedAddress->pincode ?? 'N/A',
-        'tag'     => $selectedAddress->tag ?? 'N/A',
-    ];
-
-    $deliveryBoy = [
-        'name'   => 'John Doe',
-        'avatar' => asset('/images/user-image.png'),
-        'phone'  => '9876543210',
-        'vehicle'=> 'Bike',
-        'rating' => 4.5,
-    ];
-
-    $history = \DB::table('order_status_histories')
-        ->where('order_id', $order->id)
-        ->orderBy('created_at', 'asc')
-        ->get();
-
-    $tracking = $history->map(function ($row, $index) use ($history) {
-        return [
-            'status' => ucfirst($row->status),
-            'time'   => \Carbon\Carbon::parse($row->created_at)->format('d M Y, h:i A'),
-            'active' => $index == $history->count() - 1,
-        ];
-    });
-
-    return view('admin.orders.show', compact('order', 'items', 'subtotal', 'platformFee', 'total', 'payment', 'customer', 'deliveryBoy', 'gstAmount','gstSetting','tracking','selectedAddress'));
-}
-    
-     private function calculateRefund(object $order, int $isPreOrder): array
+    private function calculateRefund(object $order, int $isPreOrder): array
     {
         $now       = Carbon::now();
         $orderDate = Carbon::parse($order->date);
@@ -415,7 +448,7 @@ public function handle(Request $request)
             'message'    => 'No refund applicable. Pre-order cancelled within 24 hours.',
         ];
     }
-    
+
     private function buildNotificationPayload(object $order, array $items, string $title, string $body, string $type, int $refundPercentage, string $logo, string $foodImage): array
     {
         return [
@@ -430,8 +463,8 @@ public function handle(Request $request)
             'food_image'        => $foodImage,
         ];
     }
-    
-     private function getOrderFoodImage(array $items): string
+
+    private function getOrderFoodImage(array $items): string
     {
         if (empty($items)) {
             return '';
@@ -446,14 +479,14 @@ public function handle(Request $request)
 
         return $dishImage ? url($dishImage) : '';
     }
-    
-     private function getAppLogo(): string
+
+    private function getAppLogo(): string
     {
         $setting = DB::table('settings')->first();
         return ($setting && $setting->logo) ? url('public/images/' . $setting->logo) : '';
     }
-    
-    
+
+
     public function updateStatusOrderManagement(Request $request)
     {
         $request->validate([
@@ -471,19 +504,18 @@ public function handle(Request $request)
         if ($request->status === 'rejected') {
 
             if ($request->has('is_pre_order')) {
-        
+
                 // ✅ Existing logic (no change)
                 $refundData       = $this->calculateRefund($order, (int) $request->is_pre_order);
                 $refundPercentage = $refundData['percentage'];
                 $refundMessage    = $refundData['message'];
-        
             } else {
-        
+
                 // 🔥 IMPORTANT FIX → when is_pre_order NOT sent
                 $refundPercentage = 100;
                 $refundMessage = 'Your refund has been successfully initiated and will be credited within 5-7 business days.';
             }
-        
+
             $order->refund_percentage = $refundPercentage;
             $order->rejected_by       = 'admin'; // or dynamic
         }
@@ -504,21 +536,34 @@ public function handle(Request $request)
         // ── Step 3: Push notifications ───────────────────────────────────────
         if ($request->status === 'rejected') {
             $this->sendRejectionNotifications(
-                $order, $user, $chef, $items,
-                $refundPercentage, $refundMessage,
-                $logo, $foodImage
+                $order,
+                $user,
+                $chef,
+                $items,
+                $refundPercentage,
+                $refundMessage,
+                $logo,
+                $foodImage
             );
         } else {
             $this->sendStatusUpdateNotification(
-                $order, $items, $refundPercentage, $logo, $foodImage
+                $order,
+                $items,
+                $refundPercentage,
+                $logo,
+                $foodImage
             );
         }
 
         // ── Step 4: Send emails ──────────────────────────────────────────────
         if ($request->status === 'rejected') {
             $this->sendRejectionEmails(
-                $order, $user, $chef, $items,
-                $refundPercentage, $refundMessage
+                $order,
+                $user,
+                $chef,
+                $items,
+                $refundPercentage,
+                $refundMessage
             );
         } else {
             $this->sendStatusUpdateEmail($order, $user);
@@ -566,8 +611,14 @@ public function handle(Request $request)
                 $customerTitle,
                 $customerBody,
                 $this->buildNotificationPayload(
-                    $order, $items, $customerTitle, $customerBody,
-                    'order_rejected_by_admin', $refundPercentage, $logo, $foodImage
+                    $order,
+                    $items,
+                    $customerTitle,
+                    $customerBody,
+                    'order_rejected_by_admin',
+                    $refundPercentage,
+                    $logo,
+                    $foodImage
                 )
             );
 
@@ -592,8 +643,14 @@ public function handle(Request $request)
                 $chefTitle,
                 $chefBody,
                 $this->buildNotificationPayload(
-                    $order, $items, $chefTitle, $chefBody,
-                    'order_cancelled_by_admin_to_chef', 0, $logo, $foodImage
+                    $order,
+                    $items,
+                    $chefTitle,
+                    $chefBody,
+                    'order_cancelled_by_admin_to_chef',
+                    0,
+                    $logo,
+                    $foodImage
                 )
             );
 
@@ -629,8 +686,14 @@ public function handle(Request $request)
                 $title,
                 $body,
                 $this->buildNotificationPayload(
-                    $order, $items, $title, $body,
-                    'order_status_update', $refundPercentage, $logo, $foodImage
+                    $order,
+                    $items,
+                    $title,
+                    $body,
+                    'order_status_update',
+                    $refundPercentage,
+                    $logo,
+                    $foodImage
                 )
             );
 
@@ -668,11 +731,11 @@ public function handle(Request $request)
                     'amount'           => $order->amount,
                     'order_date'       => $order->date,
                     'rejection_time'   => now()->format('d M Y, h:i A'),
-                    'refund_percentage'=> $refundPercentage,
+                    'refund_percentage' => $refundPercentage,
                     'refund_message'   => $refundMessage,
                 ], function ($message) use ($user, $order) {
                     $message->to($user->email)
-                            ->subject("Your Order #{$order->id} Has Been Cancelled");
+                        ->subject("Your Order #{$order->id} Has Been Cancelled");
                 });
             }
         } catch (\Throwable $e) {
@@ -683,97 +746,95 @@ public function handle(Request $request)
         }
 
         // Email to chef
-       try {
-    if ($chef && !empty($chef->email)) {
+        try {
+            if ($chef && !empty($chef->email)) {
 
-        \Log::info('Sending mail to chef', [
-            'email' => $chef->email,
-            'order_id' => $order->id
-        ]);
+                \Log::info('Sending mail to chef', [
+                    'email' => $chef->email,
+                    'order_id' => $order->id
+                ]);
 
-        Mail::send('emails.order_rejected_by_admin_chef', [
-            'chef'           => $chef,
-            'orderId'        => $order->id,
-            'items'          => $items ?? [],
-            'amount'         => $order->amount ?? 0,
-            'order_date'     => $order->date ?? now(),
-            'rejection_time' => now()->format('d M Y, h:i A')
-        ], function ($message) use ($chef, $order) {
-            $message->to($chef->email)
-                    ->subject("Order #{$order->id} Cancelled by Admin");
-        });
+                Mail::send('emails.order_rejected_by_admin_chef', [
+                    'chef'           => $chef,
+                    'orderId'        => $order->id,
+                    'items'          => $items ?? [],
+                    'amount'         => $order->amount ?? 0,
+                    'order_date'     => $order->date ?? now(),
+                    'rejection_time' => now()->format('d M Y, h:i A')
+                ], function ($message) use ($chef, $order) {
+                    $message->to($chef->email)
+                        ->subject("Order #{$order->id} Cancelled by Admin");
+                });
 
-        \Log::info('Chef mail sent successfully');
+                \Log::info('Chef mail sent successfully');
+            } else {
+                \Log::error('Chef email missing', [
+                    'chef' => $chef
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Chef mail failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
-    } else {
-        \Log::error('Chef email missing', [
-            'chef' => $chef
-        ]);
-    }
-
-} catch (\Throwable $e) {
-    \Log::error('Chef mail failed', [
-        'error' => $e->getMessage(),
-        'trace' => $e->getTraceAsString()
-    ]);
-
-    dd($e->getMessage()); // temporary debug
-}
-    }
-    
-    
-    
-    
-   private function sendDeliveredEmails(
-    $order,
-    $user,
-    $chef,
-    array $items,
-    int $refundPercentage,
-    string $refundMessage
-): void {
-    
-    try {
-        if (!empty($user->email)) {
-            // --- Price Calculation Logic ---
-            $subtotal = collect($items)->sum(function($item) {
-                return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
-            });
-            
-            
-            $gstPercent = (float) str_replace('%', '', DB::table('settings')->value('gst') ?? 0);
-            $gstAmount = (float) ($order->calculated_gst ?? (($subtotal * $gstPercent) / 100));
-            $platformFee = (float) ($order->platform_fee ?? 0);
-            $discountAmount = (float) ($order->discount_amount ?? 0);
-
-            Mail::send('emails.order_delivered_by_admin_customer', [
-                'name'              => $user->name ?? 'Customer',
-                'orderId'           => $order->id,
-                'items'             => $items,
-                'amount'            => $order->amount,
-                'subtotal'          => $subtotal,
-                'gstPercent'        => $gstPercent,
-                'gstAmount'         => $gstAmount,
-                'platformFee'       => $platformFee,
-                'discountAmount'    => $discountAmount,
-                'order_date'        => $order->date,
-                'rejection_time'    => now()->format('d M Y, h:i A'),
-                'refund_percentage' => $refundPercentage,
-                'refund_message'    => $refundMessage,
-            ], function ($message) use ($user, $order) {
-                $message->to($user->email)
-                        ->subject("Your Order #{$order->id} Has Been Delivered");
-            });
-
-            Log::info('done 100%');
+            dd($e->getMessage()); // temporary debug
         }
-    } catch (\Throwable $e) {
-        Log::error('delivered email to customer failed', [
-            'order_id' => $order->id,
-            'error'    => $e->getMessage(),
-        ]);
     }
-}
+
+
+
+
+    private function sendDeliveredEmails(
+        $order,
+        $user,
+        $chef,
+        array $items,
+        int $refundPercentage,
+        string $refundMessage
+    ): void {
+
+        try {
+            if (!empty($user->email)) {
+                // --- Price Calculation Logic ---
+                $subtotal = collect($items)->sum(function ($item) {
+                    return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
+                });
+
+
+                $gstPercent = (float) str_replace('%', '', DB::table('settings')->value('gst') ?? 0);
+                $gstAmount = (float) ($order->calculated_gst ?? (($subtotal * $gstPercent) / 100));
+                $platformFee = (float) ($order->platform_fee ?? 0);
+                $discountAmount = (float) ($order->discount_amount ?? 0);
+
+                Mail::send('emails.order_delivered_by_admin_customer', [
+                    'name'              => $user->name ?? 'Customer',
+                    'orderId'           => $order->id,
+                    'items'             => $items,
+                    'amount'            => $order->amount,
+                    'subtotal'          => $subtotal,
+                    'gstPercent'        => $gstPercent,
+                    'gstAmount'         => $gstAmount,
+                    'platformFee'       => $platformFee,
+                    'discountAmount'    => $discountAmount,
+                    'order_date'        => $order->date,
+                    'rejection_time'    => now()->format('d M Y, h:i A'),
+                    'refund_percentage' => $refundPercentage,
+                    'refund_message'    => $refundMessage,
+                ], function ($message) use ($user, $order) {
+                    $message->to($user->email)
+                        ->subject("Your Order #{$order->id} Has Been Delivered");
+                });
+
+                Log::info('done 100%');
+            }
+        } catch (\Throwable $e) {
+            Log::error('delivered email to customer failed', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // PRIVATE: Send generic status update email to customer
@@ -790,7 +851,7 @@ public function handle(Request $request)
                     'amount'  => $order->amount,
                 ], function ($message) use ($user, $order) {
                     $message->to($user->email)
-                            ->subject("Order #{$order->id} Status Updated");
+                        ->subject("Order #{$order->id} Status Updated");
                 });
             }
         } catch (\Throwable $e) {
@@ -855,7 +916,7 @@ public function handle(Request $request)
                         'refund_message'    => $refundMessage,
                     ], function ($message) use ($user, $order) {
                         $message->to($user->email)
-                                ->subject("Refund Initiated for Order #{$order->id}");
+                            ->subject("Refund Initiated for Order #{$order->id}");
                     });
                 }
             } catch (\Throwable $e) {
@@ -864,7 +925,6 @@ public function handle(Request $request)
                     'error'    => $e->getMessage(),
                 ]);
             }
-
         } catch (\Throwable $e) {
             // Refund failure must NOT block the API response — order is already rejected
             \Log::error('Refund processing failed', [
@@ -873,7 +933,4 @@ public function handle(Request $request)
             ]);
         }
     }
-
-
-
 }

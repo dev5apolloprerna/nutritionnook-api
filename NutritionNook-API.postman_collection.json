@@ -1,0 +1,5084 @@
+{
+  "info": {
+    "_postman_id": "de0cbabb-9866-4d25-9c80-0e76dd5ef987",
+    "name": "Nutrition Nook API",
+    "description": "Complete Postman collection generated from routes/api.php. Set base_url and authenticate through Verify OTP; its test script stores the returned bearer token automatically. Optional parameters are included with example values and may be disabled where appropriate. File upload fields must be selected locally before sending.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public & Authentication",
+      "item": [
+        {
+          "name": "list-razorpay-gateway",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-razorpay-gateway",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-razorpay-gateway"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-razorpay-gateway` (routes/api.php line 33)."
+          },
+          "response": []
+        },
+        {
+          "name": "test-fcm",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/test-fcm",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "test-fcm"
+              ]
+            },
+            "description": "Laravel route: `GET /api/test-fcm` (routes/api.php line 34)."
+          },
+          "response": []
+        },
+        {
+          "name": "update-buffer-status-by-order-id/{order_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/update-buffer-status-by-order-id/{order_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "update-buffer-status-by-order-id",
+                "{order_id}"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1",
+                  "description": "order_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/update-buffer-status-by-order-id/{order_id}` (routes/api.php line 55)."
+          },
+          "response": []
+        },
+        {
+          "name": "settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings"
+              ]
+            },
+            "description": "Laravel route: `GET /api/settings` (routes/api.php line 57)."
+          },
+          "response": []
+        },
+        {
+          "name": "settings/contact-details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/settings/contact-details",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "contact-details"
+              ]
+            },
+            "description": "Laravel route: `GET /api/settings/contact-details` (routes/api.php line 58)."
+          },
+          "response": []
+        },
+        {
+          "name": "update-buffer-status/{order_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/update-buffer-status/{order_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "update-buffer-status",
+                "{order_id}"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1",
+                  "description": "order_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/update-buffer-status/{order_id}` (routes/api.php line 60)."
+          },
+          "response": []
+        },
+        {
+          "name": "list-chef-cuisine-type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-chef-cuisine-type",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-chef-cuisine-type"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-chef-cuisine-type` (routes/api.php line 61)."
+          },
+          "response": []
+        },
+        {
+          "name": "clear-cache",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clear-cache",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clear-cache"
+              ]
+            },
+            "description": "Laravel route: `GET /api/clear-cache` (routes/api.php line 62)."
+          },
+          "response": []
+        },
+        {
+          "name": "terms-and-conditions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/terms-and-conditions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "terms-and-conditions"
+              ]
+            },
+            "description": "Laravel route: `GET /api/terms-and-conditions` (routes/api.php line 67)."
+          },
+          "response": []
+        },
+        {
+          "name": "privacy-policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/privacy-policy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "privacy-policy"
+              ]
+            },
+            "description": "Laravel route: `GET /api/privacy-policy` (routes/api.php line 68)."
+          },
+          "response": []
+        },
+        {
+          "name": "about-us",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/about-us",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "about-us"
+              ]
+            },
+            "description": "Laravel route: `GET /api/about-us` (routes/api.php line 69)."
+          },
+          "response": []
+        },
+        {
+          "name": "signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/signup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "signup"
+              ]
+            },
+            "description": "Laravel route: `POST /api/signup` (routes/api.php line 71).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_name\": \"Test Customer\",\n  \"email\": \"customer@example.com\",\n  \"phone_number\": \"9876543210\",\n  \"user_role\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "signin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/signin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "signin"
+              ]
+            },
+            "description": "Laravel route: `POST /api/signin` (routes/api.php line 73).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify-otp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "verify-otp"
+              ]
+            },
+            "description": "Laravel route: `POST /api/verify-otp` (routes/api.php line 77).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"9876543210\",\n  \"otp\": 123456,\n  \"login_with\": \"customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json?.data?.token;",
+                  "if (token) pm.collectionVariables.set('token', token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "list-allergies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-allergies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-allergies"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-allergies` (routes/api.php line 80)."
+          },
+          "response": []
+        },
+        {
+          "name": "resend-otp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/resend-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "resend-otp"
+              ]
+            },
+            "description": "Laravel route: `POST /api/resend-otp` (routes/api.php line 83).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"9876543210\",\n  \"login_with\": \"customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-category",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-category"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-category` (routes/api.php line 91)."
+          },
+          "response": []
+        },
+        {
+          "name": "list-tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-tags",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-tags"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-tags` (routes/api.php line 100)."
+          },
+          "response": []
+        },
+        {
+          "name": "available-dates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/available-dates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "available-dates"
+              ]
+            },
+            "description": "Laravel route: `GET /api/available-dates` (routes/api.php line 102)."
+          },
+          "response": []
+        },
+        {
+          "name": "cron/send-pre-order-reminders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/cron/send-pre-order-reminders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cron",
+                "send-pre-order-reminders"
+              ]
+            },
+            "description": "Laravel route: `GET /api/cron/send-pre-order-reminders` (routes/api.php line 104)."
+          },
+          "response": []
+        },
+        {
+          "name": "chefs/by-tag",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chefs/by-tag?tag=seasonal&page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chefs",
+                "by-tag"
+              ],
+              "query": [
+                {
+                  "key": "tag",
+                  "value": "seasonal",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chefs/by-tag` (routes/api.php line 106)."
+          },
+          "response": []
+        },
+        {
+          "name": "chef/{id}/top-picks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/{id}/top-picks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "{id}",
+                "top-picks"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/{id}/top-picks` (routes/api.php line 110)."
+          },
+          "response": []
+        },
+        {
+          "name": "list-homescreen-details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-homescreen-details",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-homescreen-details"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-homescreen-details` (routes/api.php line 113)."
+          },
+          "response": []
+        },
+        {
+          "name": "app-version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/app-version",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "app-version"
+              ]
+            },
+            "description": "Laravel route: `GET /api/app-version` (routes/api.php line 116)."
+          },
+          "response": []
+        },
+        {
+          "name": "chefs/{chef_id}/reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chefs/{chef_id}/reviews?sort_by=latest&page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chefs",
+                "{chef_id}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "sort_by",
+                  "value": "latest",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ],
+              "variable": [
+                {
+                  "key": "chef_id",
+                  "value": "1",
+                  "description": "chef_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chefs/{chef_id}/reviews` (routes/api.php line 118)."
+          },
+          "response": []
+        },
+        {
+          "name": "nearby-chefs-test/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/nearby-chefs-test/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "nearby-chefs-test",
+                "{id}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/nearby-chefs-test/{id}` (routes/api.php line 121)."
+          },
+          "response": []
+        },
+        {
+          "name": "chef-register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef-register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef-register"
+              ]
+            },
+            "description": "Laravel route: `POST /api/chef-register` (routes/api.php line 123).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"step\": 1,\n  \"name\": \"Test Chef\",\n  \"email\": \"chef@example.com\",\n  \"phone_number\": \"9876543210\",\n  \"kitchen_name\": \"Test Kitchen\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-radius",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-radius",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-radius"
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-radius` (routes/api.php line 125)."
+          },
+          "response": []
+        },
+        {
+          "name": "search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/search?q=pizza&page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "pizza",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/search` (routes/api.php line 128)."
+          },
+          "response": []
+        },
+        {
+          "name": "list-various-food-dishes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-various-food-dishes?search=paneer&category_id=all&in_stock=1&is_recommended=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-various-food-dishes"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "paneer",
+                  "disabled": false
+                },
+                {
+                  "key": "category_id",
+                  "value": "all",
+                  "disabled": false
+                },
+                {
+                  "key": "in_stock",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "is_recommended",
+                  "value": "1",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-various-food-dishes` (routes/api.php line 129)."
+          },
+          "response": []
+        },
+        {
+          "name": "today-resturants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/today-resturants?page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "today-resturants"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/today-resturants` (routes/api.php line 131)."
+          },
+          "response": []
+        },
+        {
+          "name": "pre-order-resturants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/pre-order-resturants?page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "pre-order-resturants"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/pre-order-resturants` (routes/api.php line 132)."
+          },
+          "response": []
+        },
+        {
+          "name": "gst",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gst",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "gst"
+              ]
+            },
+            "description": "Laravel route: `GET /api/gst` (routes/api.php line 133)."
+          },
+          "response": []
+        },
+        {
+          "name": "get-now-dishes/{chef_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-now-dishes/{chef_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-now-dishes",
+                "{chef_id}"
+              ],
+              "variable": [
+                {
+                  "key": "chef_id",
+                  "value": "1",
+                  "description": "chef_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-now-dishes/{chef_id}` (routes/api.php line 135)."
+          },
+          "response": []
+        },
+        {
+          "name": "get-later-dishes/{chef_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-later-dishes/{chef_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-later-dishes",
+                "{chef_id}"
+              ],
+              "variable": [
+                {
+                  "key": "chef_id",
+                  "value": "1",
+                  "description": "chef_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-later-dishes/{chef_id}` (routes/api.php line 136)."
+          },
+          "response": []
+        },
+        {
+          "name": "chef/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "{id}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/{id}` (routes/api.php line 137)."
+          },
+          "response": []
+        },
+        {
+          "name": "list-cuisine-type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-cuisine-type",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-cuisine-type"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-cuisine-type` (routes/api.php line 141)."
+          },
+          "response": []
+        },
+        {
+          "name": "nearby-chefs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/nearby-chefs?latitude=23.0225&longitude=72.5714&cuisine_type_id=1&date=2026-09-22&page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "nearby-chefs"
+              ],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "23.0225",
+                  "disabled": false
+                },
+                {
+                  "key": "longitude",
+                  "value": "72.5714",
+                  "disabled": false
+                },
+                {
+                  "key": "cuisine_type_id",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "date",
+                  "value": "2026-09-22",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/nearby-chefs` (routes/api.php line 142)."
+          },
+          "response": []
+        },
+        {
+          "name": "latest-southindian-northindian-chefs/{cuisineTypeId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/latest-southindian-northindian-chefs/{cuisineTypeId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "latest-southindian-northindian-chefs",
+                "{cuisineTypeId}"
+              ],
+              "variable": [
+                {
+                  "key": "cuisineTypeId",
+                  "value": "1",
+                  "description": "cuisineTypeId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/latest-southindian-northindian-chefs/{cuisineTypeId}` (routes/api.php line 143)."
+          },
+          "response": []
+        },
+        {
+          "name": "all-southindian-northindian-chefs/{cuisineTypeId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/all-southindian-northindian-chefs/{cuisineTypeId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "all-southindian-northindian-chefs",
+                "{cuisineTypeId}"
+              ],
+              "variable": [
+                {
+                  "key": "cuisineTypeId",
+                  "value": "1",
+                  "description": "cuisineTypeId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/all-southindian-northindian-chefs/{cuisineTypeId}` (routes/api.php line 144)."
+          },
+          "response": []
+        },
+        {
+          "name": "latest-food-by-tag/{tagId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/latest-food-by-tag/{tagId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "latest-food-by-tag",
+                "{tagId}"
+              ],
+              "variable": [
+                {
+                  "key": "tagId",
+                  "value": "1",
+                  "description": "tagId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/latest-food-by-tag/{tagId}` (routes/api.php line 145)."
+          },
+          "response": []
+        },
+        {
+          "name": "all-food-by-tag/{tagId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/all-food-by-tag/{tagId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "all-food-by-tag",
+                "{tagId}"
+              ],
+              "variable": [
+                {
+                  "key": "tagId",
+                  "value": "1",
+                  "description": "tagId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/all-food-by-tag/{tagId}` (routes/api.php line 146)."
+          },
+          "response": []
+        },
+        {
+          "name": "get-selected-address",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-selected-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-selected-address"
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-selected-address` (routes/api.php line 147)."
+          },
+          "response": []
+        },
+        {
+          "name": "get-selected-address-with-chef/{chef_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-selected-address-with-chef/{chef_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-selected-address-with-chef",
+                "{chef_id}"
+              ],
+              "variable": [
+                {
+                  "key": "chef_id",
+                  "value": "1",
+                  "description": "chef_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-selected-address-with-chef/{chef_id}` (routes/api.php line 149)."
+          },
+          "response": []
+        },
+        {
+          "name": "webhooks/razorpay/payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/webhooks/razorpay/payout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "razorpay",
+                "payout"
+              ]
+            },
+            "description": "Laravel route: `POST /api/webhooks/razorpay/payout` (routes/api.php line 151).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payout.processed\",\n  \"payload\": {\n    \"payout\": {\n      \"entity\": {\n        \"id\": \"pout_example\",\n        \"status\": \"processed\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "webhooks/razorpay/refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/webhooks/razorpay/refund",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "webhooks",
+                "razorpay",
+                "refund"
+              ]
+            },
+            "description": "Laravel route: `POST /api/webhooks/razorpay/refund` (routes/api.php line 152).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"refund.processed\",\n  \"payload\": {\n    \"refund\": {\n      \"entity\": {\n        \"id\": \"rfnd_example\",\n        \"payment_id\": \"pay_example\",\n        \"status\": \"processed\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chef (Authenticated)",
+      "item": [
+        {
+          "name": "chef/update-profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/update-profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "update-profile"
+              ]
+            },
+            "description": "Laravel route: `POST /api/chef/update-profile` (routes/api.php line 156).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Test Chef",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "email",
+                  "value": "chef@example.com",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "phone_number",
+                  "value": "9876543210",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "kitchen_name",
+                  "value": "Test Kitchen",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "description",
+                  "value": "Home cooked meals",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "working_days",
+                  "value": "monday,tuesday,wednesday",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "cover_image",
+                  "value": "",
+                  "type": "file",
+                  "disabled": true
+                },
+                {
+                  "key": "profile_image",
+                  "value": "",
+                  "type": "file",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/delete-account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/delete-account",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "delete-account"
+              ]
+            },
+            "description": "Laravel route: `DELETE /api/chef/delete-account` (routes/api.php line 158).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/orders/{orderId}/status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/orders/{orderId}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "orders",
+                "{orderId}",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "1",
+                  "description": "orderId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/chef/orders/{orderId}/status` (routes/api.php line 162).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"accepted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "payment-list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment-list?from_date=2026-09-01&to_date=2026-09-22&payment_status=paid&page=1&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment-list"
+              ],
+              "query": [
+                {
+                  "key": "from_date",
+                  "value": "2026-09-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-09-22",
+                  "disabled": false
+                },
+                {
+                  "key": "payment_status",
+                  "value": "paid",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/payment-list` (routes/api.php line 172).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "payment-details/{order_id}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment-details/{order_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment-details",
+                "{order_id}"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1",
+                  "description": "order_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/payment-details/{order_id}` (routes/api.php line 173).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/is-verified",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/is-verified",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "is-verified"
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/is-verified` (routes/api.php line 175).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/payouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/payouts?payment_status=processed&from_date=2026-09-01&to_date=2026-09-22",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "payouts"
+              ],
+              "query": [
+                {
+                  "key": "payment_status",
+                  "value": "processed",
+                  "disabled": false
+                },
+                {
+                  "key": "from_date",
+                  "value": "2026-09-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-09-22",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/payouts` (routes/api.php line 178).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/payouts/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/payouts/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "payouts",
+                "{id}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/payouts/{id}` (routes/api.php line 179).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef-orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef-orders?order_type=all&date_type=today&page=1&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef-orders"
+              ],
+              "query": [
+                {
+                  "key": "order_type",
+                  "value": "all",
+                  "disabled": false
+                },
+                {
+                  "key": "date_type",
+                  "value": "today",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef-orders` (routes/api.php line 183).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/delete-account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/delete-account",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "delete-account"
+              ]
+            },
+            "description": "Laravel route: `DELETE /api/chef/delete-account` (routes/api.php line 185).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/earnings-overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/earnings-overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "earnings-overview"
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/earnings-overview` (routes/api.php line 188).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "generate-invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/generate-invoice",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "generate-invoice"
+              ]
+            },
+            "description": "Laravel route: `POST /api/generate-invoice` (routes/api.php line 190).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_date\": \"2026-09-01\",\n  \"to_date\": \"2026-09-22\",\n  \"payment_status\": \"paid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "order-history",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/order-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "order-history"
+              ]
+            },
+            "description": "Laravel route: `POST /api/order-history` (routes/api.php line 191).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_date\": \"2026-09-01\",\n  \"to_date\": \"2026-09-22\",\n  \"status\": \"completed\",\n  \"search\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/earnings/overview-pdf",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/earnings/overview-pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "earnings",
+                "overview-pdf"
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/earnings/overview-pdf` (routes/api.php line 192).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/analytics?type=daily&from_date=2026-09-01&to_date=2026-09-22",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "daily",
+                  "disabled": false
+                },
+                {
+                  "key": "from_date",
+                  "value": "2026-09-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-09-22",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef/analytics` (routes/api.php line 197).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "status"
+              ]
+            },
+            "description": "Laravel route: `PATCH /api/chef/status` (routes/api.php line 200).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get-chef-details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-chef-details",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-chef-details"
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-chef-details` (routes/api.php line 203).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add-food-items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/add-food-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-food-items"
+              ]
+            },
+            "description": "Laravel route: `POST /api/add-food-items` (routes/api.php line 205).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Paneer Tikka",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "image",
+                  "value": "",
+                  "type": "file",
+                  "disabled": false
+                },
+                {
+                  "key": "price",
+                  "value": "250",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "preparation_time",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "quantity",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "description",
+                  "value": "Fresh paneer tikka",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "ingredients",
+                  "value": "Paneer, spices",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "allergy_warning",
+                  "value": "Dairy",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "spice_level",
+                  "value": "medium",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "cuisine_type_id",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "is_get_now_or_get_later",
+                  "value": "both",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "tags",
+                  "value": "1,2",
+                  "type": "text",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-food-items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-food-items?page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-food-items"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-food-items` (routes/api.php line 206).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "edit-food-items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/edit-food-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "edit-food-items"
+              ]
+            },
+            "description": "Laravel route: `POST /api/edit-food-items` (routes/api.php line 207).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "name",
+                  "value": "Paneer Tikka",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "image",
+                  "value": "",
+                  "type": "file",
+                  "disabled": false
+                },
+                {
+                  "key": "price",
+                  "value": "275",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "preparation_time",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "quantity",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "description",
+                  "value": "Fresh paneer tikka",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "ingredients",
+                  "value": "Paneer, spices",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "allergy_warning",
+                  "value": "Dairy",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "spice_level",
+                  "value": "medium",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "cuisine_type_id",
+                  "value": "1",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "is_get_now_or_get_later",
+                  "value": "both",
+                  "type": "text",
+                  "disabled": false
+                },
+                {
+                  "key": "tags",
+                  "value": "1,2",
+                  "type": "text",
+                  "disabled": false
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-food-items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/delete-food-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "delete-food-items"
+              ]
+            },
+            "description": "Laravel route: `POST /api/delete-food-items` (routes/api.php line 208).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/dishes/{dish_id}/stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/dishes/{dish_id}/stock",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "dishes",
+                "{dish_id}",
+                "stock"
+              ],
+              "variable": [
+                {
+                  "key": "dish_id",
+                  "value": "1",
+                  "description": "dish_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/chef/dishes/{dish_id}/stock` (routes/api.php line 210).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"in_stock\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef/dishes/{dish_id}/recommendation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef/dishes/{dish_id}/recommendation",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef",
+                "dishes",
+                "{dish_id}",
+                "recommendation"
+              ],
+              "variable": [
+                {
+                  "key": "dish_id",
+                  "value": "1",
+                  "description": "dish_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/chef/dishes/{dish_id}/recommendation` (routes/api.php line 211).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_recommended\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add-chef-main-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/add-chef-main-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-chef-main-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/add-chef-main-address` (routes/api.php line 258).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_address\": \"10 Kitchen Road, Ahmedabad\",\n  \"pincode\": \"380001\",\n  \"latitude\": \"23.0225\",\n  \"longitude\": \"72.5714\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-chef-main-address",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-chef-main-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-chef-main-address"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-chef-main-address` (routes/api.php line 259).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "edit-chef-main-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/edit-chef-main-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "edit-chef-main-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/edit-chef-main-address` (routes/api.php line 260).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"full_address\": \"11 Kitchen Road, Ahmedabad\",\n  \"pincode\": \"380001\",\n  \"latitude\": \"23.0225\",\n  \"longitude\": \"72.5714\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-chef-main-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/delete-chef-main-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "delete-chef-main-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/delete-chef-main-address` (routes/api.php line 261).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add-chef-serving-areas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/add-chef-serving-areas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-chef-serving-areas"
+              ]
+            },
+            "description": "Laravel route: `POST /api/add-chef-serving-areas` (routes/api.php line 263).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"area\": \"Navrangpura\",\n  \"pincode\": \"380009\",\n  \"latitude\": \"23.0365\",\n  \"longitude\": \"72.5611\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-chef-serving-areas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-chef-serving-areas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-chef-serving-areas"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-chef-serving-areas` (routes/api.php line 264).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "edit-chef-serving-areas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/edit-chef-serving-areas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "edit-chef-serving-areas"
+              ]
+            },
+            "description": "Laravel route: `POST /api/edit-chef-serving-areas` (routes/api.php line 265).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"area\": \"Navrangpura\",\n  \"pincode\": \"380009\",\n  \"latitude\": \"23.0365\",\n  \"longitude\": \"72.5611\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-chef-serving-areas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/delete-chef-serving-areas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "delete-chef-serving-areas"
+              ]
+            },
+            "description": "Laravel route: `POST /api/delete-chef-serving-areas` (routes/api.php line 266).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders & Payments (Authenticated)",
+      "item": [
+        {
+          "name": "get-order-preparation-time/{order_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/get-order-preparation-time/{order_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "get-order-preparation-time",
+                "{order_id}"
+              ],
+              "variable": [
+                {
+                  "key": "order_id",
+                  "value": "1",
+                  "description": "order_id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/get-order-preparation-time/{order_id}` (routes/api.php line 157).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/create-order",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "create-order"
+              ]
+            },
+            "description": "Laravel route: `POST /api/create-order` (routes/api.php line 165).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chef_id\": 1,\n  \"items\": [\n    {\n      \"id\": 1,\n      \"quantity\": 2\n    }\n  ],\n  \"coupon_id\": null,\n  \"date\": \"2026-09-23\",\n  \"address_id\": 1,\n  \"is_pre_order\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create-order-one",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/create-order-one",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "create-order-one"
+              ]
+            },
+            "description": "Laravel route: `POST /api/create-order-one` (routes/api.php line 166).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chef_id\": 1,\n  \"items\": [\n    {\n      \"id\": 1,\n      \"quantity\": 2\n    }\n  ],\n  \"coupon_id\": null,\n  \"date\": \"2026-09-23\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify-payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/verify-payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "verify-payment"
+              ]
+            },
+            "description": "Laravel route: `POST /api/verify-payment` (routes/api.php line 167).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"razorpay_order_id\": \"order_example\",\n  \"razorpay_payment_id\": \"pay_example\",\n  \"razorpay_signature\": \"signature_example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "payment-list-pdf",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payment-list-pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payment-list-pdf"
+              ]
+            },
+            "description": "Laravel route: `GET /api/payment-list-pdf` (routes/api.php line 174).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "orders/{id}/accept",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{id}/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{id}",
+                "accept"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/orders/{id}/accept` (routes/api.php line 181).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "orders/{id}/reject",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{id}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{id}",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/orders/{id}/reject` (routes/api.php line 182).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Unable to fulfill the order\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "order-detail/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/order-detail/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "order-detail",
+                "{id}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/order-detail/{id}` (routes/api.php line 202).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "my_orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/my_orders?per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "my_orders"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/my_orders` (routes/api.php line 275).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "past-orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/past-orders?from_date=2026-09-01&to_date=2026-09-22&status=completed&page=1&per_page=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "past-orders"
+              ],
+              "query": [
+                {
+                  "key": "from_date",
+                  "value": "2026-09-01",
+                  "disabled": false
+                },
+                {
+                  "key": "to_date",
+                  "value": "2026-09-22",
+                  "disabled": false
+                },
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/past-orders` (routes/api.php line 277).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "orders-details/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders-details/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders-details",
+                "{id}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/orders-details/{id}` (routes/api.php line 281).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "orders/{id}/invoice",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{id}/invoice",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "orders",
+                "{id}",
+                "invoice"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/orders/{id}/invoice` (routes/api.php line 293).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer & General (Authenticated)",
+      "item": [
+        {
+          "name": "save-fcm-token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/save-fcm-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "save-fcm-token"
+              ]
+            },
+            "description": "Laravel route: `POST /api/save-fcm-token` (routes/api.php line 159).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"DEVICE_FCM_TOKEN\",\n  \"platform\": \"android\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "notifications/send",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notifications",
+                "send"
+              ]
+            },
+            "description": "Laravel route: `POST /api/notifications/send` (routes/api.php line 160).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chef_id\": 1,\n  \"order_id\": 1,\n  \"customer_name\": \"Test Customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-food-dishes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-food-dishes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-food-dishes"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-food-dishes` (routes/api.php line 163).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "search-food-dishes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/search-food-dishes?search=paneer&page=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "search-food-dishes"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "paneer",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/search-food-dishes` (routes/api.php line 164).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "customer/delete-account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/customer/delete-account",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "customer",
+                "delete-account"
+              ]
+            },
+            "description": "Laravel route: `DELETE /api/customer/delete-account` (routes/api.php line 186).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef-category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef-category",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef-category"
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef-category` (routes/api.php line 201).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef-dishes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef-dishes?search=paneer&category_id=all&in_stock=1&is_recommended=1&per_page=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef-dishes"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "paneer",
+                  "disabled": false
+                },
+                {
+                  "key": "category_id",
+                  "value": "all",
+                  "disabled": false
+                },
+                {
+                  "key": "in_stock",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "is_recommended",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/chef-dishes` (routes/api.php line 209).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-coupon-code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-coupon-code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-coupon-code"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-coupon-code` (routes/api.php line 215).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "loggeduser",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/loggeduser",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "loggeduser"
+              ]
+            },
+            "description": "Laravel route: `GET /api/loggeduser` (routes/api.php line 217).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Laravel route: `POST /api/logout` (routes/api.php line 219).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-menu-items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-menu-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-menu-items"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-menu-items` (routes/api.php line 221).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-banners",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-banners"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-banners` (routes/api.php line 223).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-restaurants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-restaurants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-restaurants"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-restaurants` (routes/api.php line 225).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-restaurants-details/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-restaurants-details/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-restaurants-details",
+                "{id}"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "id path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-restaurants-details/{id}` (routes/api.php line 226).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "popular-dishes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/popular-dishes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "popular-dishes"
+              ]
+            },
+            "description": "Laravel route: `GET /api/popular-dishes` (routes/api.php line 269).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chef-open-status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/chef-open-status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chef-open-status"
+              ]
+            },
+            "description": "Laravel route: `POST /api/chef-open-status` (routes/api.php line 271).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update-customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/update-customer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "update-customer"
+              ]
+            },
+            "description": "Laravel route: `POST /api/update-customer` (routes/api.php line 284).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Customer\",\n  \"email\": \"customer@example.com\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add-review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/add-review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-review"
+              ]
+            },
+            "description": "Laravel route: `POST /api/add-review` (routes/api.php line 286).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"chef_id\": 1,\n  \"food_items_id\": 1,\n  \"review_text\": \"Great food!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "add-rating",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/add-rating",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-rating"
+              ]
+            },
+            "description": "Laravel route: `POST /api/add-rating` (routes/api.php line 291).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"chef_id\": 1,\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "favourite-chefs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/favourite-chefs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "favourite-chefs"
+              ]
+            },
+            "description": "Laravel route: `POST /api/favourite-chefs` (routes/api.php line 296).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chef_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "favourite-chefs/{chefId}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/favourite-chefs/{chefId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "favourite-chefs",
+                "{chefId}"
+              ],
+              "variable": [
+                {
+                  "key": "chefId",
+                  "value": "1",
+                  "description": "chefId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/favourite-chefs/{chefId}` (routes/api.php line 297).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-coupon",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-coupon",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-coupon"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-coupon` (routes/api.php line 306).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "apply-coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/apply-coupon",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "apply-coupon"
+              ]
+            },
+            "description": "Laravel route: `POST /api/apply-coupon` (routes/api.php line 310).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coupon_code\": \"WELCOME10\",\n  \"order_amount\": 500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer Addresses (Authenticated)",
+      "item": [
+        {
+          "name": "add-users-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/add-users-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "add-users-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/add-users-address` (routes/api.php line 228).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_address\": \"123 Example Street, Ahmedabad\",\n  \"pincode\": \"380001\",\n  \"latitude\": \"23.0225\",\n  \"longitude\": \"72.5714\",\n  \"house_number\": \"123\",\n  \"floor\": \"1\",\n  \"building_name\": \"Example Heights\",\n  \"tag\": \"home\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list-users-address",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-users-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-users-address"
+              ]
+            },
+            "description": "Laravel route: `GET /api/list-users-address` (routes/api.php line 229).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "edit-users-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/edit-users-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "edit-users-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/edit-users-address` (routes/api.php line 230).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"full_address\": \"124 Example Street, Ahmedabad\",\n  \"pincode\": \"380001\",\n  \"latitude\": \"23.0225\",\n  \"longitude\": \"72.5714\",\n  \"house_number\": \"124\",\n  \"floor\": \"2\",\n  \"building_name\": \"Example Heights\",\n  \"tag\": \"home\",\n  \"is_selected\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete-users-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/delete-users-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "delete-users-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/delete-users-address` (routes/api.php line 231).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "user-select-address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user-select-address",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user-select-address"
+              ]
+            },
+            "description": "Laravel route: `POST /api/user-select-address` (routes/api.php line 254).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Issues (Authenticated)",
+      "item": [
+        {
+          "name": "create-issue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/create-issue",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "create-issue"
+              ]
+            },
+            "description": "Laravel route: `POST /api/create-issue` (routes/api.php line 236).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Order issue\",\n  \"description\": \"Please describe the issue\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "user/issues",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/issues?page=1&per_page=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "issues"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "per_page",
+                  "value": "15",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/user/issues` (routes/api.php line 239).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "user/{issueId}/issues",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/{issueId}/issues",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "{issueId}",
+                "issues"
+              ],
+              "variable": [
+                {
+                  "key": "issueId",
+                  "value": "1",
+                  "description": "issueId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/user/{issueId}/issues` (routes/api.php line 242).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "issues/{issueId}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/issues/{issueId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "issues",
+                "{issueId}"
+              ],
+              "variable": [
+                {
+                  "key": "issueId",
+                  "value": "1",
+                  "description": "issueId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `GET /api/issues/{issueId}` (routes/api.php line 245).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "issues/{issueId}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/issues/{issueId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "issues",
+                "{issueId}"
+              ],
+              "variable": [
+                {
+                  "key": "issueId",
+                  "value": "1",
+                  "description": "issueId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `POST /api/issues/{issueId}` (routes/api.php line 247).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated issue\",\n  \"description\": \"Updated description\",\n  \"status\": \"open\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "issues/{issueId}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/issues/{issueId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "issues",
+                "{issueId}"
+              ],
+              "variable": [
+                {
+                  "key": "issueId",
+                  "value": "1",
+                  "description": "issueId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `DELETE /api/issues/{issueId}` (routes/api.php line 249).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "issues/{issueId}/status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/issues/{issueId}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "issues",
+                "{issueId}",
+                "status"
+              ],
+              "variable": [
+                {
+                  "key": "issueId",
+                  "value": "1",
+                  "description": "issueId path parameter"
+                }
+              ]
+            },
+            "description": "Laravel route: `PUT /api/issues/{issueId}/status` (routes/api.php line 252).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

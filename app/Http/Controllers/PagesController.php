@@ -43,10 +43,6 @@ class PagesController extends Controller
         $data['status'] = (int)$data['status'];
 
         // Handle image upload
-    //    if ($request->hasFile('image')) {
-    //         $fileName = time() . '.' . $request->file('image')->getClientOriginalExtension();
-    //         $request->file('image')->move(public_path('images'), $fileName); 
-    //         $data['image'] = 'public/images/' . $fileName; // <-- ab DB me full relative path save hoga
         if ($request->hasFile('image')) {
             $fileName = $request->file('image')->hashName();
             $request->file('image')->move(public_path('images'), $fileName);
@@ -79,9 +75,6 @@ class PagesController extends Controller
         $page = page::findOrFail($id);
 
         if ($request->hasFile('image')) {
-            // $fileName = time() . '.' . $request->file('image')->getClientOriginalExtension();
-            // $request->file('image')->move(public_path('images'), $fileName); 
-            // $data['image'] = 'public/images/' . $fileName; // <-- ab DB me full relative path save hoga
             $fileName = $request->file('image')->hashName();
             $request->file('image')->move(public_path('images'), $fileName);
             $data['image'] = 'images/' . $fileName;

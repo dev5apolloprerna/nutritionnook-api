@@ -59,7 +59,6 @@
 
                         @if (isset($page) && $page->image_url)
                             <div class="mt-2">
-                                <!-- <img src="{{ asset($page->image) }}" alt="Page Image" width="120"> -->
                                 <img src="{{ $page->image_url }}" alt="Page Image" width="120">
                             </div>
                         @endif

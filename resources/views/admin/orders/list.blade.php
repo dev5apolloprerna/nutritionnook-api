@@ -7,7 +7,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <h4 class="card-title mb-0">Order Management</h4>
-                        <p class="card-description mb-0">All Customer Orders</p>
+                        <!-- <p class="card-description mb-0">All Customer Orders</p> -->
+                        <p class="card-description mb-0">Customer orders grouped by delivery date and status</p>
                     </div>
                    
                     <div class="d-flex align-items-center gap-2">
@@ -17,6 +18,7 @@
                         </a>
                         <a href="{{ route('export.orders') }}" class="btn btn-gradient-primary btn-fw">Export Excel</a>
                         <form method="GET" action="{{ route('orders.index') }}" class="d-flex">
+                            <input type="hidden" name="tab" value="{{ $tab }}">
                             <select name="status" class="form-control form-control-sm mr-2" onchange="this.form.submit()">
                                 <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>All Status</option>
                                 <option value="new" {{ ($status ?? '') == 'new' ? 'selected' : '' }}>New</option>
@@ -41,7 +43,31 @@
                     <!--    <input type="date" class="form-control form-control-sm" style="width: 150px;">-->
                     <!--</div>-->
                 </div>
-
+                
+                <ul class="nav nav-tabs mb-4" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {{ $tab === 'today' ? 'active' : '' }}"
+                            href="{{ route('orders.index', ['tab' => 'today']) }}">
+                            Today's Orders
+                            <span class="badge badge-pill badge-light ml-1">{{ $tabCounts['today'] }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {{ $tab === 'pre_orders' ? 'active' : '' }}"
+                            href="{{ route('orders.index', ['tab' => 'pre_orders']) }}">
+                            Pre-orders
+                            <span class="badge badge-pill badge-light ml-1">{{ $tabCounts['pre_orders'] }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link {{ $tab === 'completed' ? 'active' : '' }}"
+                            href="{{ route('orders.index', ['tab' => 'completed']) }}">
+                            Completed / Rejected
+                            <span class="badge badge-pill badge-light ml-1">{{ $tabCounts['completed'] }}</span>
+                        </a>
+                    </li>
+                </ul>
+                
                 <div class="table-responsive">
                     <table class="table table-hover" id="myTable">
                         <thead>
