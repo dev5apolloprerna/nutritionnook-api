@@ -119,6 +119,22 @@ class ChefPayoutService
         return $asOf->copy()->subMonthNoOverflow()->day(15)->endOfDay();
     }
 
+    /**
+     * Get the scheduled payout date for an order from its placement date.
+     *
+     * Orders placed from the 1st through the 15th are paid on the 22nd of the
+     * same month. Orders placed from the 16th through month-end are paid on the
+     * 7th of the following month.
+     */
+    public static function scheduledPayoutDate(Carbon $orderDate): Carbon
+    {
+        if ($orderDate->day <= 15) {
+            return $orderDate->copy()->day(22)->startOfDay();
+        }
+
+        return $orderDate->copy()->startOfMonth()->addMonth()->day(7)->startOfDay();
+    }
+    
     public function retryPayout(int $payoutId): array
     {
         $payout = Payout::find($payoutId);

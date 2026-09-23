@@ -16,6 +16,7 @@ use Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RefundService;
 use App\Services\FCMService;
+use App\Services\ChefPayoutService;
 use App\Models\HomeScreen;
 use Razorpay\Api\Api;
 use App\Models\Order;
@@ -565,9 +566,7 @@ class ApiController extends Controller
         foreach ($unpaidOrders as $order) {
             $orderDate = Carbon::parse($order->date);
 
-            $scheduled = $orderDate->day <= 15
-                ? Carbon::create($orderDate->year, $orderDate->month, 22)->startOfDay()
-                : Carbon::create($orderDate->year, $orderDate->month, 7)->addMonth()->startOfDay();
+            $scheduled = ChefPayoutService::scheduledPayoutDate($orderDate);
 
             // Missed run -> carry the balance to the next upcoming run.
             if ($scheduled->lt($today)) {
