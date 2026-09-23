@@ -1851,8 +1851,11 @@ class ApiController extends Controller
             }
         }
 
+        $rejectedBy = $isChef ? 'chef' : ($isUser ? 'customer' : null);
+
         DB::table('orders')->where('id', $orderId)->update([
             'status' => 'rejected',
+            ...($rejectedBy !== null ? ['rejected_by' => $rejectedBy] : []),
             'refund_percentage' => $refundPercentage,
             'updated_at' => now(),
         ]);
@@ -1917,10 +1920,10 @@ class ApiController extends Controller
                     'title' => $notifyTitle,
                 ]);
 
-                DB::table('orders')->where('id', $orderId)->update([
-                    'rejected_by' => 'chef',
-                    'updated_at' => now(),
-                ]);
+                // DB::table('orders')->where('id', $orderId)->update([
+                //     'rejected_by' => 'chef',
+                //     'updated_at' => now(),
+                // ]);
             }
 
             if ($isUser && $order->is_buffer == 1) {
@@ -1953,10 +1956,10 @@ class ApiController extends Controller
                     'title' => $notifyTitle,
                 ]);
 
-                DB::table('orders')->where('id', $orderId)->update([
-                    'rejected_by' => 'customer',
-                    'updated_at' => now(),
-                ]);
+                // DB::table('orders')->where('id', $orderId)->update([
+                //     'rejected_by' => 'customer',
+                //     'updated_at' => now(),
+                // ]);
             }
         } catch (\Throwable $e) {
             \Log::error('FCM Error in rejectOrder', [

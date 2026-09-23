@@ -10,6 +10,15 @@ use Illuminate\Support\Facades\Mail;
 
 class CommonHelper
 {
+    public static function customerOrderStatus(?string $status, ?string $rejectedBy): ?string
+    {
+        if ($status === 'rejected' && $rejectedBy === 'customer') {
+            return 'cancelled';
+        }
+
+        return $status;
+    }
+    
     public static function apiResponse($code, $status, $message, $data, $is_array = false, $server_code = 200)
     {
         if ($is_array == true) {

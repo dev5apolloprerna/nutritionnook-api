@@ -36,13 +36,13 @@
                 <p><strong>Accepted Time:</strong> {{ $accept_time }}</p>
                 <p><strong>Pick Up Address:</strong> {{ $address }}</p>
                 
-                <h4 style="margin-top: 20px;">Items:</h4>
+                <!-- <h4 style="margin-top: 20px;">Items:</h4>
                 @foreach($items as $item)
                 <div class="item">
                     <p><strong>{{ $item['name'] ?? 'Item' }}</strong> x {{ $item['quantity'] ?? 1 }}</p>
                     <p>₹{{ number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1), 2) }}</p>
                 </div>
-                @endforeach
+                @endforeach -->
                 
                 <p style="font-size: 18px; font-weight: bold; margin-top: 20px; text-align: right;">
                     Total: ₹{{ number_format($amount, 2) }}

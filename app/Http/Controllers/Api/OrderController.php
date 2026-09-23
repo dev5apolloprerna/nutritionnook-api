@@ -255,7 +255,7 @@ public function myOrders(Request $request)
         'items'      => $items,
         'amount'     => number_format($order->amount,2),
         'date'       => $order->date,
-        'status'     => $order->status,
+        'status'     => CommonHelper::customerOrderStatus($order->status, $order->rejected_by),
         'created_at' => $order->created_at,
         'review'     => $reviewText,   // ✅ agar review table me ho
         'rating'     => $rating,       // ✅ agar rating table me ho
