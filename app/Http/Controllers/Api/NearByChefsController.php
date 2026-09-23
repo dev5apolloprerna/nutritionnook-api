@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\FoodDish;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use App\Helpers\CommonHelper;
@@ -29,7 +28,6 @@ class NearByChefsController extends Controller
         }
         $defaultLat = env('DEFAULT_LAT', 22.9952);
         $defaultLng = env('DEFAULT_LNG', 72.6041);
-        $isGuest = !$user;
         if (!$user) {
 
             $userLat = $defaultLat;
@@ -60,28 +58,7 @@ class NearByChefsController extends Controller
         // 4️⃣ Cuisine filter
         $cuisineTypeId = $request->input('cuisine_type_id');
 
-        $chefIds = [];
-
-        // 👉 Apply cuisine logic ONLY when cuisine != 1 (All)
-        if ($cuisineTypeId && $cuisineTypeId != 1) {
-
-            $chefIds = DB::table('food_dishes')
-                ->where('cuisine_type_id', $cuisineTypeId)
-                ->pluck('chef_id')
-                ->unique()
-                ->toArray();
-
-            // ❌ Cuisine exists but no chef at all
-            if (empty($chefIds)) {
-                return CommonHelper::apiResponse(
-                    200,
-                    false,
-                    'This cuisine is not available within ' . $radius . ' km.',
-                    []
-                );
-            }
-        }
-
+        
         // 5️⃣ Date → Day
         $day = null;
         if ($request->filled('date')) {
@@ -111,17 +88,17 @@ class NearByChefsController extends Controller
             )
             ->having('distance', '<=', $radius)
             // ->where('available', 1)
-            ->whereExists(function ($query) {
-                $query->select(DB::raw(1))
-                    ->from('food_dishes')
-                    ->whereColumn('food_dishes.chef_id', 'chefs.id');
-                // ->where('food_dishes.in_stock', 1);
-            })
             ->orderBy('distance', 'asc');
 
-        // 👉 Cuisine filter only when needed
+        // Filter by a matching dish only for a specific cuisine. Cuisine 1 means
+        // "All", so chefs without dishes must not disappear from that listing.
         if ($cuisineTypeId && $cuisineTypeId != 1) {
-            $chefsQuery->whereIn('chefs.id', $chefIds);
+            $chefsQuery->whereExists(function ($query) use ($cuisineTypeId) {
+                $query->selectRaw('1')
+                    ->from('food_dishes')
+                    ->whereColumn('food_dishes.chef_id', 'chefs.id')
+                    ->where('food_dishes.cuisine_type_id', $cuisineTypeId);
+            });
         }
 
         // 👉 Working day filter
