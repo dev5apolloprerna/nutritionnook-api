@@ -20,6 +20,7 @@ use App\Services\ChefPayoutService;
 use App\Models\HomeScreen;
 use Razorpay\Api\Api;
 use App\Models\Order;
+use App\Services\InvoicePricingService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -486,16 +487,21 @@ class ApiController extends Controller
         /* ---------- GST ---------- */
         $gstPercent = (float) str_replace('%', '', DB::table('settings')->value('gst') ?? 0);
 
-        $subtotal = collect($items)->sum('total');
-        $gstAmount = ($subtotal * $gstPercent) / 100;
-
         /* ---------- COUPON ---------- */
         $coupon = null;
         if ($order->coupon_id) {
             $coupon = DB::table('coupons')->where('id', $order->coupon_id)->first();
         }
         $setting = DB::table('settings')->first();
-        $platformFee = $setting->platform_fee ?? 0; // જે ટેબલમાં તમારી ફી સેવ છ
+        $pricing = app(InvoicePricingService::class)->resolve(
+            $order,
+            $items,
+            $gstPercent,
+            (float) ($setting->platform_fee ?? 0)
+        );
+        $subtotal = $pricing['subtotal'];
+        $gstAmount = $pricing['gstAmount'];
+        $platformFee = $pricing['platformFee'];
         /* ---------- PDF DATA ---------- */
         $data = [
             'order'      => $order,
@@ -3954,9 +3960,6 @@ class ApiController extends Controller
                         // ---------- GST ----------
                         $gstPercent = (float) str_replace('%', '', DB::table('settings')->value('gst') ?? 0);
 
-                        $subtotal = collect($items)->sum('total');
-                        $gstAmount = ($subtotal * $gstPercent) / 100;
-
                         // ---------- COUPON ----------
                         $coupon = null;
                         if ($order->coupon_id) {
@@ -3964,7 +3967,15 @@ class ApiController extends Controller
                         }
 
                         $setting = DB::table('settings')->first();
-                        $platformFee = $setting->platform_fee ?? 0; // જે ટેબલમાં તમારી ફી સેવ છે
+                        $pricing = app(InvoicePricingService::class)->resolve(
+                            $order,
+                            $items,
+                            $gstPercent,
+                            (float) ($setting->platform_fee ?? 0)
+                        );
+                        $subtotal = $pricing['subtotal'];
+                        $gstAmount = $pricing['gstAmount'];
+                        $platformFee = $pricing['platformFee'];
 
                         // ---------- PDF DATA ----------
                         $pdfData = [
