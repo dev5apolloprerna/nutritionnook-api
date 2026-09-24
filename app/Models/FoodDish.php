@@ -9,6 +9,10 @@ class FoodDish extends Model
 {
     use HasFactory;
 
+    public const GET_NOW = 'get_now';
+    public const GET_LATER = 'get_later';
+    public const BOTH = 'both';
+
     protected $table = 'food_dishes';
 
     protected $fillable = [
@@ -39,6 +43,18 @@ class FoodDish extends Model
         'price' => 'decimal:2',
     ];
 
+    /**
+     * Return the stored availability values that can fulfil the requested option.
+     */
+    public static function availabilityTypesFor(string $option): array
+    {
+        return match ($option) {
+            self::GET_NOW => [self::GET_NOW, self::BOTH],
+            self::GET_LATER => [self::GET_LATER, self::BOTH],
+            default => [],
+        };
+    }
+    
     // 🔁 Relationships
 
     public function chef()

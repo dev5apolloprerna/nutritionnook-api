@@ -353,7 +353,8 @@ public function getAvailableDates()
     $dates = [];
     $today = Carbon::today();
 
-    for ($i = 0; $i <= 7; $i++) {   // ðŸ‘ˆ start from 1, so today skip ho jaayega
+    // Get Later starts tomorrow: return the next seven dates and never today.
+    for ($i = 1; $i <= 7; $i++) {
         $date = $today->copy()->addDays($i);
         $dates[] = [
             'id'    => $date->toDateString(),   // e.g. 2025-09-05

@@ -896,7 +896,11 @@ public function getTopPicks(Request $request, $id)
 
     // ✅ Pre-order condition
     if ((int)$chef->is_pre_order === 0) {
-        $query->where('is_get_now_or_get_later', 'get_now');
+        // $query->where('is_get_now_or_get_later', 'get_now');
+        $query->whereIn(
+            'is_get_now_or_get_later',
+            FoodDish::availabilityTypesFor(FoodDish::GET_NOW)
+        );
     }
 
     // ✅ TAG FILTER

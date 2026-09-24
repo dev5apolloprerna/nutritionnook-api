@@ -78,6 +78,12 @@ class NearByChefsController extends Controller
                 'chefs.address',
                 'chefs.available',
                 'chefs.working_days',
+                DB::raw('EXISTS (
+                    SELECT 1
+                    FROM food_dishes
+                    WHERE food_dishes.chef_id = chefs.id
+                      AND food_dishes.in_stock = 1
+                ) AS has_in_stock_items'),
                 DB::raw("ROUND(6371 * acos(
                 cos(radians($userLat)) *
                 cos(radians(chefs.latitude)) *
@@ -88,6 +94,7 @@ class NearByChefsController extends Controller
             )
             ->having('distance', '<=', $radius)
             // ->where('available', 1)
+            ->orderByDesc('has_in_stock_items') 
             ->orderBy('distance', 'asc');
 
         // Filter by a matching dish only for a specific cuisine. Cuisine 1 means
@@ -137,6 +144,7 @@ class NearByChefsController extends Controller
             $chef->profile_image = $chef->profile_image ? asset($chef->profile_image) : null;
             $chef->working_days = $chef->working_days ? json_decode($chef->working_days, true) : [];
             $chef->is_fav = in_array($chef->id, $favourites);
+            $chef->has_in_stock_items = (bool) $chef->has_in_stock_items;
             return $chef;
         });
 

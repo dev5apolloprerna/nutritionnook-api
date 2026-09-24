@@ -528,7 +528,7 @@ public function getTodayDishes(Request $request, $chefId)
         ->where('f.chef_id', $chefId)
         // ->where('f.in_stock', 1)
         // ->where('f.tags',$tagId)
-        ->whereIn('f.is_get_now_or_get_later', ['get_now', 'both']); 
+        ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
 
     
     if (!empty($categoryId)) {
@@ -664,7 +664,7 @@ if (!is_array($days) || empty($days)) {
             'f.tags' // debug
         )
         ->where('f.chef_id', $chefId)
-        ->whereIn('f.is_get_now_or_get_later', ['get_later', 'both']);
+        ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
 
     // âœ… apply category filter if passed
      if (!empty($categoryId)) {
@@ -952,6 +952,7 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
     }
 
     $foodItems = $query
+        ->orderByDesc('in_stock')
         ->orderBy('id', 'desc')
         ->get([
             'id',
@@ -1314,7 +1315,8 @@ $query = DB::table('food_dishes as fd')
     // ✅ RADIUS FILTER
     ->having('distance', '<=', $radius)
 
-    // ✅ IMPORTANT for HAVING stability
+    // Keep available dishes at the front without hiding out-of-stock dishes.
+    ->orderByDesc('fd.in_stock')
     ->orderBy('distance');
 
     // =============================
@@ -1660,14 +1662,18 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
         }
     }
 
-    // 🔹 Fetch chef IDs by cuisine
-    $chefIds = \DB::table('food_dishes')
-        ->where('cuisine_type_id', $cuisineTypeId)
-        ->pluck('chef_id')
-        ->unique()
-        ->values();
+    // Cuisine ID 1 represents the "All" tab, so it must not restrict chefs
+    // to dishes whose cuisine_type_id happens to be 1.
+    $chefIds = null;
+    if ((int) $cuisineTypeId !== 1) {
+        $chefIds = DB::table('food_dishes')
+            ->where('cuisine_type_id', $cuisineTypeId)
+            ->pluck('chef_id')
+            ->unique()
+            ->values();
+    }
 
-    if ($chefIds->isEmpty()) {
+    if ($chefIds !== null && $chefIds->isEmpty()) {
         return CommonHelper::apiResponse(
             200,
             true,
@@ -1677,8 +1683,7 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
     }
 
     // 🔹 Chef query with distance calculation
-    $chefs = \DB::table('chefs')
-        ->whereIn('id', $chefIds)
+    $chefsQuery = DB::table('chefs')
         ->select(
             'id',
             'name',
@@ -1687,7 +1692,13 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
             'working_days',
             'latitude',
             'longitude',
-            'available'
+            'available',
+            DB::raw('EXISTS (
+                SELECT 1
+                FROM food_dishes
+                WHERE food_dishes.chef_id = chefs.id
+                  AND food_dishes.in_stock = 1
+            ) AS has_in_stock_items')
         )
         ->selectRaw("
             (6371 * acos(
@@ -1698,7 +1709,13 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
                 * sin(radians(latitude))
             )) AS distance
         ", [$userLat, $userLng, $userLat])
-        ->having('distance', '<=', $radius)
+        ->having('distance', '<=', $radius);
+
+    if ($chefIds !== null) {
+        $chefsQuery->whereIn('id', $chefIds);
+    }
+
+    $chefs = $chefsQuery
         // ->whereJsonContains('working_days', $today)
         ->whereExists(function ($query) {
         $query->select(DB::raw(1))
@@ -1707,6 +1724,7 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
             // ->where('food_dishes.in_stock', 1);
     })
     // ->where('available', 1)
+        ->orderByDesc('has_in_stock_items')
         ->orderBy('distance')
         ->get();
 
@@ -1727,10 +1745,12 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
         );
     }
 
+    $resultChefIds = $chefs->pluck('id');
+
     // 🔹 Ratings
     $ratings = \DB::table('ratings')
         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-        ->whereIn('chef_id', $chefIds)
+        ->whereIn('chef_id', $resultChefIds)
         ->groupBy('chef_id')
         ->get()
         ->keyBy('chef_id');
@@ -1740,7 +1760,7 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
     if(isset($user)){
     $favChefIds = \DB::table('favourite_chefs')
         ->where('user_id', $user->id)
-        ->whereIn('chef_id', $chefIds)
+        ->whereIn('chef_id', $resultChefIds)
         ->pluck('chef_id')
         ->toArray();
     }else{
@@ -1783,6 +1803,17 @@ public function getAllChefByCuisine(Request $request, $cuisineTypeId)
 
     // ðŸ”¹ Token se user_id lo
     $userId = auth()->id(); // âœ… token se authenticated user ka id
+    $defaultLat = env('DEFAULT_LAT', 22.9952);
+    $defaultLng = env('DEFAULT_LNG', 72.6041);
+    $userAddress = $userId
+        ? DB::table('user_addresses')
+            ->where('user_id', $userId)
+            ->where('is_selected', 1)
+            ->first()
+        : null;
+    $userLat = $userAddress->latitude ?? $defaultLat;
+    $userLng = $userAddress->longitude ?? $defaultLng;
+    $radius = \App\Models\Setting::value('radius_km') ?? 10;
 
     // ðŸ”¹ Date se day nikaalna (lowercase me)
     $dayName = null;
@@ -1795,21 +1826,44 @@ public function getAllChefByCuisine(Request $request, $cuisineTypeId)
     }
 
     // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
-    $chefIds = \DB::table('food_dishes')
-        ->where('cuisine_type_id', $cuisineTypeId)
-        ->pluck('chef_id')
-        ->unique()
-        ->toArray();
+    $chefIds = null;
+    if ((int) $cuisineTypeId !== 1) {
+        $chefIds = DB::table('food_dishes')
+            ->where('cuisine_type_id', $cuisineTypeId)
+            ->pluck('chef_id')
+            ->unique()
+            ->toArray();
+    }
 
-    if (empty($chefIds)) {
+    if ($chefIds !== null && empty($chefIds)) {
         return CommonHelper::apiResponse(200, true, 'No chefs found for this cuisine type', null);
     }
 
     // ðŸ”¹ Chef fetch (city + profile_image)
-    $query = \DB::table('chefs')
-        ->whereIn('id', $chefIds);
+    $query = DB::table('chefs');
 
-    $chefs = $query->paginate($perPage, ['id', 'name', 'city', 'profile_image', 'working_days','available'], 'page', $page);
+    if ($chefIds !== null) {
+        $query->whereIn('id', $chefIds);
+    }
+
+    $query->selectRaw('chefs.*, EXISTS (
+        SELECT 1
+        FROM food_dishes
+        WHERE food_dishes.chef_id = chefs.id
+          AND food_dishes.in_stock = 1
+    ) AS has_in_stock_items, (
+        6371 * acos(
+            cos(radians(?)) *
+            cos(radians(chefs.latitude)) *
+            cos(radians(chefs.longitude) - radians(?)) +
+            sin(radians(?)) *
+            sin(radians(chefs.latitude))
+        )
+    ) AS distance', [$userLat, $userLng, $userLat])
+        ->having('distance', '<=', $radius)
+        ->orderByDesc('has_in_stock_items');
+
+    $chefs = $query->paginate($perPage, ['*'], 'page', $page);
 
     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
     if ($dayName) {
@@ -1827,10 +1881,12 @@ public function getAllChefByCuisine(Request $request, $cuisineTypeId)
         return CommonHelper::apiResponse(200, true, 'No chefs found for this cuisine type' . ($dayName ? ' and date' : ''), null);
     }
 
+    $resultChefIds = $chefs->pluck('id');
+
     // ðŸ”¹ Ratings fetch
     $ratings = \DB::table('ratings')
         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-        ->whereIn('chef_id', $chefIds)
+        ->whereIn('chef_id', $resultChefIds)
         ->groupBy('chef_id')
         ->get()
         ->keyBy('chef_id');
@@ -1840,7 +1896,7 @@ public function getAllChefByCuisine(Request $request, $cuisineTypeId)
     if ($userId) {
         $favChefIds = \DB::table('favourite_chefs')
             ->where('user_id', $userId)
-            ->whereIn('chef_id', $chefIds)
+            ->whereIn('chef_id', $resultChefIds)
             ->pluck('chef_id')
             ->toArray();
     }
