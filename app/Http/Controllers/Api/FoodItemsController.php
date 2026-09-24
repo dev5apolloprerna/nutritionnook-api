@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\FoodItem;
+use App\Models\FoodDish;
 use App\Models\Category;
 use Laravel\Sanctum\PersonalAccessToken;
 use App\Models\CuisineType;
@@ -29,6 +30,8 @@ public function listFoodItems()
         )
         ->leftJoin('cuisine_type as ct', 'fd.cuisine_type_id', '=', 'ct.id') // ðŸ‘ˆ join added
         ->where('fd.chef_id', $user->id)
+        ->orderByDesc('fd.in_stock')
+        ->orderByDesc('fd.id')
         ->get();
 
     if ($data->isNotEmpty()) {
@@ -147,13 +150,18 @@ public function editFoodItems(Request $request)
         'cuisine_type_id'  => 'required|exists:cuisine_type,id',
         'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
         'tags'              => 'required',
+        'image'             => 'nullable|image',
     ]);
 
     if ($validator->fails()) {
         return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
     }
 
-    $foodItem = \App\Models\FoodItem::where('id', $request->id)->first();
+    $authUser = $request->user();
+
+    $foodItem = \App\Models\FoodItem::where('id', $request->id)
+        ->where('chef_id', $authUser->id)
+        ->first();
 
     if (!$foodItem) {
         return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
@@ -164,7 +172,7 @@ public function editFoodItems(Request $request)
         return CommonHelper::apiResponse(422, false, 'Selected category has been deleted.', null);
     }
 
-    $authUser = $request->user();
+    // $authUser = $request->user();
 
     $imagePath = null;
     if ($request->hasFile('image')) {
@@ -188,7 +196,7 @@ public function editFoodItems(Request $request)
     
 
     $data = [
-        'chef_id'            => $authUser->id,
+        // 'chef_id'            => $authUser->id,
         'name'               => $request->name,
         'description'        => $request->description,
         'base_price'         => $newBasePrice,
@@ -198,7 +206,7 @@ public function editFoodItems(Request $request)
         'weight_option_id'   => $request->quantity,
         'ingredients'        => $request->ingredients,
         'allergy_warning'    => $request->allergy_warning,
-        'is_active'          => 0,
+        // 'is_active'          => 0,
         'spicy_level'        => $request->spice_level,
         // 'cuisine'            => $request->cuisine
         'cuisine_type_id'    => $request->cuisine_type_id,
@@ -357,7 +365,10 @@ public function searchFoodItems(Request $request)
     }
 
     // ✅ PAGINATE
-    $paginated = $query->paginate($perPage);
+     $paginated = $query
+        ->orderByDesc('fd.in_stock')
+        ->orderByDesc('fd.id')
+        ->paginate($perPage);
 
     // ✅ cuisines map
     $cuisines = \DB::table('cuisine_type')->pluck('title', 'id')->toArray();
@@ -539,7 +550,8 @@ public function getTodayDishes(Request $request, $chefId)
         $query->whereRaw('FIND_IN_SET(?, f.tags)', [$tagId]);
     }
     
-    $dishes = $query->orderBy('f.id', 'desc')
+    $dishes = $query->orderByDesc('f.in_stock')
+        ->orderByDesc('f.id')
         ->paginate($perPage, ['*'], 'page', $page);
     
    
@@ -678,7 +690,8 @@ if (!is_array($days) || empty($days)) {
 
 
     // âœ… pagination
-    $dishes = $query->orderBy('f.id', 'desc')
+    $dishes = $query->orderByDesc('f.in_stock')
+        ->orderByDesc('f.id')
         ->paginate($perPage, ['*'], 'page', $page);
 
     // âœ… Transform dishes (without breaking pagination meta)
