@@ -111,7 +111,7 @@ class Chef extends Authenticatable
     {
         return $this->orders()
             ->whereDate('date', Carbon::today())
-            ->where('is_buffer', '1')
+            //->where('is_buffer', '1')
             ->where('payment_status', 'received')
             ->count();
     }

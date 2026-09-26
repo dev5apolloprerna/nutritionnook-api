@@ -1350,8 +1350,9 @@ class ApiController extends Controller
                 'o.image'
             )
             ->where('o.chef_id', $chefId)
-            ->where('is_buffer', 1)
-            ->where('payment_status', 'received')
+            // ->where('is_buffer', 1)
+            // ->where('payment_status', 'received')
+            ->where('o.payment_status', 'received')
             ->when($dateType === 'today', function ($q) use ($today) {
                 $q->whereDate('o.date', $today);
             })
