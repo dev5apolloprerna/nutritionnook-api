@@ -313,7 +313,7 @@ public function getOrderDetail($id)
     /* ---------------- ADD RESPONSE FIELDS ---------------- */
 
     $order->platform_fee    = (int) $platformFee;
-    $order->gst_amount      = round($gstAmount);
+    $order->gst_amount      = number_format($gstAmount, 2, '.', ''); // $order->gst_amount      = round($gstAmount);
     $order->discount_amount = (float) round($discountAmount);
 
     return CommonHelper::apiResponse(

@@ -66,7 +66,7 @@
                         <label>Quantity <span class="text-danger">*</span></label>
                         <div class="d-flex gap-2">
                             <input type="number" name="quantity" class="form-control"
-                                    value="{{ old('quantity', $quantity ?? '') }}" placeholder="Enter Quantity">
+                                    value="{{ old('quantity', $quantity ?? '') }}" placeholder="Enter Quantity" required>
                             <select name="unit" class="form-select">
                                 @foreach (['pcs', 'set', 'ml', 'gm', 'kg', 'litre'] as $u)
                                     <option value="{{ $u }}" {{ old('unit', $unit ?? '') == $u ? 'selected' : '' }}>{{ ucfirst($u) }}</option>

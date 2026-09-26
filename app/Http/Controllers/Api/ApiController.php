@@ -3825,7 +3825,7 @@ class ApiController extends Controller
         $newStatus = $request->status;
 
         // Check order ownership
-        $order = DB::table('orders')
+        $order = Order::query()
             ->where('id', $orderId)
             ->where('chef_id', $chefId)
             ->first();
@@ -3836,12 +3836,10 @@ class ApiController extends Controller
         }
 
         // Update status
-        DB::table('orders')
-            ->where('id', $orderId)
-            ->update([
-                'status' => $newStatus,
-                'updated_at' => now(),
-            ]);
+        $order->update([
+            'status' => $newStatus,
+        ]);
+
 
         // Check latest history record for this order + chef
         $lastHistory = DB::table('order_status_histories')
@@ -4027,7 +4025,6 @@ class ApiController extends Controller
                         \Log::info("✅ Delivery Email with Invoice sent to: " . $user->email);
                     }
                 } catch (\Throwable $e) {
-                    dd($e->getMessage());
                     \Log::warning('Order status mail failed', [
                         'order_id' => $orderId,
                         'error' => $e->getMessage()
@@ -4041,7 +4038,6 @@ class ApiController extends Controller
                 'data' => $data
             ]);
         } catch (\Throwable $e) {
-            dd($e->getMessage());
             \Log::warning('Accept order push failed', [
                 'order_id' => $orderId,
                 'error' => $e->getMessage()

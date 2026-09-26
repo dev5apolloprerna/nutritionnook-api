@@ -724,7 +724,7 @@ class OrderController extends Controller
 
             // ✅ FIXED FIELDS
             'platform_fee'    => $platformFee,
-            'gst_amount'      => number_format($gstAmount, 2),
+            'gst_amount'      => number_format($gstAmount, 2, '.', ''), // 'gst_amount'      => number_format($gstAmount, 2),
             'discount_amount' => (float) number_format($discountAmount, 2),
 
             'date'       => $order->date,
