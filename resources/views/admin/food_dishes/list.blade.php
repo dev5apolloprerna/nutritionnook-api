@@ -53,7 +53,11 @@
                                     </td>
                                     <td>₹{{ number_format($dish->price, 2) }}</td>
                                     <td>
-                                        <label class="badge badge-info">{{ ucfirst($dish->spicy_level) }}</label>
+                                        @if ($dish->spicy_level)
+                                            <label class="badge badge-info">{{ ucfirst($dish->spicy_level) }}</label>
+                                        @else
+                                            <label class="badge badge-secondary">—</label>
+                                        @endif
                                     </td>
                                     {{-- <td>
                                         <label

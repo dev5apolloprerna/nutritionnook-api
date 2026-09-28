@@ -30,7 +30,7 @@ public function store(Request $request)
         'chef_id'           => 'required|exists:chefs,id',
         'name'              => 'required|string|max:255',
         'price'             => 'required|numeric',
-        'spicy_level'       => 'required',
+        'spicy_level'       => 'nullable|integer|between:1,5',
         'quantity'          => 'required|numeric',
         'unit'              => 'required|string',
         'prep_minutes'      => 'nullable|integer',
@@ -143,7 +143,7 @@ public function update(Request $request, FoodDish $foodDish)
     $request->validate([
         'name'              => 'required|string|max:255',
         'price'             => 'required|numeric',
-        'spicy_level'       => 'required',
+        'spicy_level'       => 'nullable|integer|between:1,5',
         'quantity'          => 'required|numeric',
         'unit'              => 'required|string',
         'prep_minutes'      => 'nullable|integer',

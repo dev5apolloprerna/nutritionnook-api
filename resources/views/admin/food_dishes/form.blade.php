@@ -46,9 +46,12 @@
 
                     {{-- Spicy Level --}}
                     <div class="form-group col-md-6">
-                        <label>Spicy Level <span class="text-danger">*</span></label>
-                        <select name="spicy_level" class="form-select form-control">
-                            <option value="" disabled selected>Select Spicy Level</option>
+                        <label>Spicy Level <span class="text-muted">(Optional)</span></label>
+                        <select name="spicy_level"
+                            class="form-select form-control @error('spicy_level') is-invalid @enderror">
+                            <option value="" {{ old('spicy_level', $dish->spicy_level ?? '') === '' ? 'selected' : '' }}>
+                                No Spicy Level
+                            </option>
                             @foreach (['1', '2', '3', '4', '5'] as $level)
                                 <option value="{{ $level }}"
                                     {{ old('spicy_level', $dish->spicy_level ?? '') == $level ? 'selected' : '' }}>
