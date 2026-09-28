@@ -605,14 +605,14 @@ class ApiController extends Controller
         $commRate = $chef->commission ?? 0;
         $now = Carbon::now();
 
-        // Earnings cards show the full menu base-price total. The separate
-        // payout fields continue to apply the 90% payout / 10% deposit split.
-        $periodEarnings = function ($start, $end) use ($chefId, $commRate) {
-            $orders = Order::where('chef_id', $chefId)
+        // Earnings are recognized only when an order is delivered. Merely
+        // receiving payment does not mean the chef has earned the amount yet.
+        $periodEarnings = function ($start, $end) use ($chefId) {
+            return (float) Order::where('chef_id', $chefId)
                 ->where('status', 'delivered')
                 ->whereBetween('date', [$start, $end])
-                ->get();
-            return CommonHelper::chefPayoutBreakdown($orders, $commRate)['dish_total'];
+                
+                ->sum('amount');
         };
 
         // Today, Week, Month Metrics
@@ -761,14 +761,13 @@ class ApiController extends Controller
         $fromDate = $request->from_date;
         $toDate   = $request->to_date;
 
-        // Earnings cards show the full menu base-price total for delivered
-        // orders. Payout amounts below retain the 90% payout / 10% deposit split.
-        $periodEarnings = function ($start, $end) use ($chefId, $commRate) {
-            $orders = Order::where('chef_id', $chefId)
+        // Earnings are recognized only when an order is delivered. Merely
+        // receiving payment does not mean the chef has earned the amount yet.
+        $periodEarnings = function ($start, $end) use ($chefId) {
+            return (float) Order::where('chef_id', $chefId)
                 ->where('status', 'delivered')
                 ->whereBetween('date', [$start, $end])
-                ->get();
-            return CommonHelper::chefPayoutBreakdown($orders, $commRate)['dish_total'];
+                ->sum('amount');
         };
 
         // Today / Week / Month always reflect the live current period.

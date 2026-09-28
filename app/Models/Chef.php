@@ -92,19 +92,14 @@ class Chef extends Authenticatable
 
     public function getEarningsAttribute(): string
     {
-        // "Today's earnings" = the chef's full menu base-price total for
-        // orders DELIVERED today — same basis as the admin Payout page and the
-        // "Manage Earning > Overview > Today's" card. Rounded to whole rupees so it
-        // matches the Overview card (which the app parses as a strict integer).
-        $orders = $this->orders()
+        // "Today's earnings" is recognized only after an order is delivered.
+        $earnings = $this->orders()
             ->where('status', 'delivered')
             ->whereDate('date', Carbon::today())
-            ->get();
-
-        $earnings = round(\App\Helpers\CommonHelper::chefPayoutBreakdown($orders, $this->commission ?? 0)['dish_total']);
+            ->sum('amount');
 
         $formatter = new NumberFormatter('en_IN', NumberFormatter::CURRENCY);
-        return $formatter->formatCurrency($earnings, 'INR');
+        return $formatter->formatCurrency(round($earnings), 'INR');
     }
 
     public function getOrdersCountAttribute(): int

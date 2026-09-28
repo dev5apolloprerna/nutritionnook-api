@@ -473,7 +473,7 @@ class ChefManagementController extends Controller
 
         $orders = Order::with(['chef', 'user']) // relation ke saath
             ->where('chef_id', $id)
-            ->where('payment_status', '!=', 'pending')
+            ->where('payment_status', 'received')
             ->orderBy('date', 'desc')
             ->get();
 
@@ -634,7 +634,9 @@ class ChefManagementController extends Controller
         ];
 
 
-        $totalAmount = Order::where('chef_id', $id)->sum('amount');
+        // Earnings are recognized only after the chef has delivered the order.
+        // Received orders that are still new/ready must not be counted yet.
+        $totalAmount = $orders->where('status', 'delivered')->sum('amount');
 
         $commissionPercentage = $chef->commission ?? 0;
 

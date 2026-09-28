@@ -18,909 +18,906 @@ use App\Models\Tag;
 
 class FoodItemsController extends Controller
 {
-public function listFoodItems()
-{
-    $user = auth()->user();
+    public function listFoodItems()
+    {
+        $user = auth()->user();
 
-    $data = \DB::table('food_dishes as fd')
-        ->select(
-            'fd.*',
-            \DB::raw("CONCAT('https://api.nutritionnook.net/', fd.image) AS image"),
-            'ct.title as cuisine' // ðŸ‘ˆ cuisine_type ka title
-        )
-        ->leftJoin('cuisine_type as ct', 'fd.cuisine_type_id', '=', 'ct.id') // ðŸ‘ˆ join added
-        ->where('fd.chef_id', $user->id)
-        ->orderByDesc('fd.in_stock')
-        ->orderByDesc('fd.id')
-        ->get();
+        $data = \DB::table('food_dishes as fd')
+            ->select(
+                'fd.*',
+                \DB::raw("CONCAT('https://api.nutritionnook.net/', fd.image) AS image"),
+                'ct.title as cuisine' // ðŸ‘ˆ cuisine_type ka title
+            )
+            ->leftJoin('cuisine_type as ct', 'fd.cuisine_type_id', '=', 'ct.id') // ðŸ‘ˆ join added
+            ->where('fd.chef_id', $user->id)
+            ->orderByDesc('fd.in_stock')
+            ->orderByDesc('fd.id')
+            ->get();
 
-    if ($data->isNotEmpty()) {
-        return CommonHelper::apiResponse(200, true, 'FoodItems list fetched successfully!', $data);
-    } else {
-        return CommonHelper::apiResponse(404, false, 'Failed to find food items', []);
+        if ($data->isNotEmpty()) {
+            return CommonHelper::apiResponse(200, true, 'FoodItems list fetched successfully!', $data);
+        } else {
+            return CommonHelper::apiResponse(404, false, 'Failed to find food items', []);
+        }
     }
-}
 
 
 
 
     public function addFoodItems(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'name'            => 'required|string',
-        'image'           => 'required|image',
-        'price'           => 'required|numeric',
-        // 'category_id'     => 'required|exists:categories,id',
-        'category_id' => 'required|string',
-        'preparation_time' => 'required',
-        'quantity'        => 'required',
-        // 'cuisine' => 'required'
-        'cuisine_type_id' => 'required|exists:cuisine_type,id',
-        'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
-        'tags' => 'required',
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'name'            => 'required|string',
+            'image'           => 'required|image',
+            'price'           => 'required|numeric',
+            // 'category_id'     => 'required|exists:categories,id',
+            'category_id' => 'required|string',
+            'preparation_time' => 'required',
+            'quantity'        => 'required',
+            // 'cuisine' => 'required'
+            'cuisine_type_id' => 'required|exists:cuisine_type,id',
+            'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
+            'tags' => 'required',
+        ]);
 
-    if ($validator->fails()) {
-        return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
-    }
+        if ($validator->fails()) {
+            return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+        }
 
-    // âœ… Check Foreign Keys Are Not Soft Deleted
-    if (!\App\Helpers\CommonHelper::checkForeignKeyActive(\App\Models\Category::class, $request->category_id)) {
-        return CommonHelper::apiResponse(422, false, 'Selected category has been deleted.', null);
-    }
+        // âœ… Check Foreign Keys Are Not Soft Deleted
+        if (!\App\Helpers\CommonHelper::checkForeignKeyActive(\App\Models\Category::class, $request->category_id)) {
+            return CommonHelper::apiResponse(422, false, 'Selected category has been deleted.', null);
+        }
 
-    $authUser = $request->user(); // Authenticated User
+        $authUser = $request->user(); // Authenticated User
 
-    $imagePath = null;
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-        $image->move(public_path('images'), $imageName);
-        $imagePath = 'public/images/' . $imageName;
-    }
-    
-    $chefCommission = DB::table('chefs')
-        ->where('id', $authUser->id)
-        ->value('commission');
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('images'), $imageName);
+            $imagePath = 'public/images/' . $imageName;
+        }
 
-    if(!$chefCommission){
-        $chefCommission = 10; // default commission
-    }
-    
-    $basePrice = $request->price;
-    $commissionAmount = ($basePrice * $chefCommission) / 100;
-    $finalSellingPrice = round($basePrice + $commissionAmount);
+        $chefCommission = DB::table('chefs')
+            ->where('id', $authUser->id)
+            ->value('commission');
 
-    // âœ… Prepare & Store Data
-    $data = [
-        'chef_id'             => $authUser->id,
-        'name'                => $request->name,
-        'description'         => $request->description,
-        'image'               => $imagePath,
-        'base_price'          => $basePrice,
-        'price'               => $finalSellingPrice,
-        'category_id'         => $request->category_id,
-        'preparation_time_id' => $request->preparation_time,
-        'weight_option_id'    => $request->quantity,
-        'ingredients'         => $request->ingredients,
-        'allergy_warning'     => $request->allergy_warning,
-        'is_active'           => 0,
-        'spicy_level'         => $request->spice_level,
-        // 'cuisine'    => $request->cuisine
-        'cuisine_type_id'     => $request->cuisine_type_id,
-        'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
-        'tags'                 => $request->tags,
-    ];
+        if (!$chefCommission) {
+            $chefCommission = 10; // default commission
+        }
 
-    $foodItem = \App\Models\FoodItem::create($data);
+        $basePrice = $request->price;
+        $commissionAmount = ($basePrice * $chefCommission) / 100;
+        $finalSellingPrice = round($basePrice + $commissionAmount);
 
-    // âœ… Convert image to full URL in the response
-    $foodItem->image = $foodItem->image ? url($foodItem->image) : null;
-    if($foodItem){
-        
+        // âœ… Prepare & Store Data
+        $data = [
+            'chef_id'             => $authUser->id,
+            'name'                => $request->name,
+            'description'         => $request->description,
+            'image'               => $imagePath,
+            'base_price'          => $basePrice,
+            'price'               => $finalSellingPrice,
+            'category_id'         => $request->category_id,
+            'preparation_time_id' => $request->preparation_time,
+            'weight_option_id'    => $request->quantity,
+            'ingredients'         => $request->ingredients,
+            'allergy_warning'     => $request->allergy_warning,
+            'is_active'           => 0,
+            'spicy_level'         => $request->spice_level,
+            // 'cuisine'    => $request->cuisine
+            'cuisine_type_id'     => $request->cuisine_type_id,
+            'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
+            'tags'                 => $request->tags,
+        ];
+
+        $foodItem = \App\Models\FoodItem::create($data);
+
+        // âœ… Convert image to full URL in the response
         $foodItem->image = $foodItem->image ? url($foodItem->image) : null;
+        if ($foodItem) {
 
-        // // âœ… Convert tags (ids) to array of titles
-        // $tagIds = explode(',', $foodItem->tags);
-        // $tags = \App\Models\Tag::whereIn('id', $tagIds)->pluck('title');
+            $foodItem->image = $foodItem->image ? url($foodItem->image) : null;
 
-        // // Replace tags in response with titles
-        // $foodItem->tags = $tags;
+            // // âœ… Convert tags (ids) to array of titles
+            // $tagIds = explode(',', $foodItem->tags);
+            // $tags = \App\Models\Tag::whereIn('id', $tagIds)->pluck('title');
 
-
-        return CommonHelper::apiResponse(201, true, 'FoodItem added successfully!', $foodItem);
-    }else{
-        return CommonHelper::apiResponse(500, false, 'failed to delete FoodItem', null);
-    }
-    
-}
+            // // Replace tags in response with titles
+            // $foodItem->tags = $tags;
 
 
-public function editFoodItems(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'id'              => 'required|exists:food_dishes,id',
-        'name'            => 'required|string',
-        'price'           => 'required|numeric',
-        // 'category_id'     => 'required|exists:categories,id',
-        'category_id' => 'required|string',
-        'preparation_time' => 'required',
-        'quantity'        => 'required',
-        // 'cuisine'         => 'required',
-        'cuisine_type_id'  => 'required|exists:cuisine_type,id',
-        'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
-        'tags'              => 'required',
-        'image'             => 'nullable|image',
-    ]);
-
-    if ($validator->fails()) {
-        return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+            return CommonHelper::apiResponse(201, true, 'FoodItem added successfully!', $foodItem);
+        } else {
+            return CommonHelper::apiResponse(500, false, 'failed to delete FoodItem', null);
+        }
     }
 
-    $authUser = $request->user();
 
-    $foodItem = \App\Models\FoodItem::where('id', $request->id)
-        ->where('chef_id', $authUser->id)
-        ->first();
+    public function editFoodItems(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id'              => 'required|exists:food_dishes,id',
+            'name'            => 'required|string',
+            'price'           => 'required|numeric',
+            // 'category_id'     => 'required|exists:categories,id',
+            'category_id' => 'required|string',
+            'preparation_time' => 'required',
+            'quantity'        => 'required',
+            // 'cuisine'         => 'required',
+            'cuisine_type_id'  => 'required|exists:cuisine_type,id',
+            'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
+            'tags'              => 'required',
+            'image'             => 'nullable|image',
+        ]);
 
-    if (!$foodItem) {
-        return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
+        if ($validator->fails()) {
+            return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+        }
+
+        $authUser = $request->user();
+
+        $foodItem = \App\Models\FoodItem::where('id', $request->id)
+            ->where('chef_id', $authUser->id)
+            ->first();
+
+        if (!$foodItem) {
+            return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
+        }
+
+        // âœ… Check soft-deleted foreign keys
+        if (!\App\Helpers\CommonHelper::checkForeignKeyActive(\App\Models\Category::class, $request->category_id)) {
+            return CommonHelper::apiResponse(422, false, 'Selected category has been deleted.', null);
+        }
+
+        // $authUser = $request->user();
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('images'), $imageName);
+            $imagePath = 'public/images/' . $imageName;
+        }
+
+        $chefCommission = DB::table('chefs')
+            ->where('id', $authUser->id)
+            ->value('commission');
+
+        if (!$chefCommission) {
+            $chefCommission = 10; // default commission
+        }
+
+        // Always calculate fresh selling price based on base_price
+        $newBasePrice = $request->price;
+        $newSellingPrice = round($newBasePrice + ($newBasePrice * $chefCommission) / 100);
+
+
+        $data = [
+            // 'chef_id'            => $authUser->id,
+            'name'               => $request->name,
+            'description'        => $request->description,
+            'base_price'         => $newBasePrice,
+            'price'              => $newSellingPrice,
+            'category_id'        => $request->category_id,
+            'preparation_time_id' => $request->preparation_time,
+            'weight_option_id'   => $request->quantity,
+            'ingredients'        => $request->ingredients,
+            'allergy_warning'    => $request->allergy_warning,
+            // 'is_active'          => 0,
+            'spicy_level'        => $request->spice_level,
+            // 'cuisine'            => $request->cuisine
+            'cuisine_type_id'    => $request->cuisine_type_id,
+            'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
+            'tags'                => $request->tags,
+        ];
+
+        // âœ… Only update image if new one is uploaded
+        if ($imagePath) {
+            $data['image'] = $imagePath;
+        }
+
+        if ($foodItem->update($data)) {
+
+            //  $tagIds = explode(',', $foodItem->tags);
+            // $tags = \App\Models\Tag::whereIn('id', $tagIds)->pluck('title');
+
+            // // Replace tags in response with titles
+            // $foodItem->tags = $tags;
+
+            return CommonHelper::apiResponse(200, true, 'FoodItem updated successfully!', $foodItem);
+        } else {
+            return CommonHelper::apiResponse(500, false, 'Failed to update FoodItem', null);
+        }
     }
 
-    // âœ… Check soft-deleted foreign keys
-    if (!\App\Helpers\CommonHelper::checkForeignKeyActive(\App\Models\Category::class, $request->category_id)) {
-        return CommonHelper::apiResponse(422, false, 'Selected category has been deleted.', null);
-    }
 
-    // $authUser = $request->user();
-
-    $imagePath = null;
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-        $image->move(public_path('images'), $imageName);
-        $imagePath = 'public/images/' . $imageName;
-    }
-    
-    $chefCommission = DB::table('chefs')
-        ->where('id', $authUser->id)
-        ->value('commission');
-
-    if(!$chefCommission){
-        $chefCommission = 10; // default commission
-    }
-    
-   // Always calculate fresh selling price based on base_price
-    $newBasePrice = $request->price;
-    $newSellingPrice = round($newBasePrice + ($newBasePrice * $chefCommission) / 100);
-    
-
-    $data = [
-        // 'chef_id'            => $authUser->id,
-        'name'               => $request->name,
-        'description'        => $request->description,
-        'base_price'         => $newBasePrice,
-        'price'              => $newSellingPrice,
-        'category_id'        => $request->category_id,
-        'preparation_time_id'=> $request->preparation_time,
-        'weight_option_id'   => $request->quantity,
-        'ingredients'        => $request->ingredients,
-        'allergy_warning'    => $request->allergy_warning,
-        // 'is_active'          => 0,
-        'spicy_level'        => $request->spice_level,
-        // 'cuisine'            => $request->cuisine
-        'cuisine_type_id'    => $request->cuisine_type_id,
-        'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
-        'tags'                => $request->tags,
-    ];
-
-    // âœ… Only update image if new one is uploaded
-    if ($imagePath) {
-        $data['image'] = $imagePath;
-    }
-
-    if ($foodItem->update($data)) {
-        
-        //  $tagIds = explode(',', $foodItem->tags);
-        // $tags = \App\Models\Tag::whereIn('id', $tagIds)->pluck('title');
-
-        // // Replace tags in response with titles
-        // $foodItem->tags = $tags;
-        
-        return CommonHelper::apiResponse(200, true, 'FoodItem updated successfully!', $foodItem);
-    } else {
-        return CommonHelper::apiResponse(500, false, 'Failed to update FoodItem', null);
-    }
-}
-
-    
 
 
     public function deleteFoodItems(Request $request)
-{
-    // Validate the request
-    $validator = Validator::make($request->all(), [
-        'id' => 'required|exists:food_dishes,id',
-    ]);
+    {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:food_dishes,id',
+        ]);
 
-    if ($validator->fails()) {
-        return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+        if ($validator->fails()) {
+            return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+        }
+
+        // Find the food item
+        $foodItem = FoodItem::find($request->id);
+
+        if (!$foodItem) {
+            return CommonHelper::apiResponse(404, false, 'FoodItem not found!', null);
+        }
+
+        // âœ… Detach from pivot tables before deleting
+        $foodItem->categories()->detach();
+
+        if ($foodItem->delete()) {
+            return CommonHelper::apiResponse(200, true, 'FoodItem deleted successfully!', null);
+        } else {
+            return CommonHelper::apiResponse(500, false, 'failed to delete FoodItem', null);
+        }
     }
 
-    // Find the food item
-    $foodItem = FoodItem::find($request->id);
+    public function updateStock(Request $request, $dish_id)
+    {
+        $validator = Validator::make($request->all(), [
+            'in_stock' => 'required|boolean',
+        ]);
 
-    if (!$foodItem) {
-        return CommonHelper::apiResponse(404, false, 'FoodItem not found!', null);
+        if ($validator->fails()) {
+            return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+        }
+
+        $foodItem = FoodItem::where('id', $dish_id)
+            ->where('chef_id', auth()->id()) // ensure only the logged-in chef can update
+            ->first();
+
+        if (!$foodItem) {
+            return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
+        }
+
+        $foodItem->in_stock = $request->in_stock;
+        $foodItem->save();
+
+        return CommonHelper::apiResponse(200, true, 'Stock status updated successfully!', $foodItem);
     }
 
-    // âœ… Detach from pivot tables before deleting
-    $foodItem->categories()->detach();
-   
-    if($foodItem->delete()){
-        return CommonHelper::apiResponse(200, true, 'FoodItem deleted successfully!', null);
-    }else{
-        return CommonHelper::apiResponse(500, false, 'failed to delete FoodItem', null);
-    }
-    
-}
 
-public function updateStock(Request $request, $dish_id)
-{
-    $validator = Validator::make($request->all(), [
-        'in_stock' => 'required|boolean',
-    ]);
+    public function updateRecommendation(Request $request, $dish_id)
+    {
+        $validator = Validator::make($request->all(), [
+            'is_recommended' => 'required|boolean',
+        ]);
 
-    if ($validator->fails()) {
-        return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
-    }
+        if ($validator->fails()) {
+            return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
+        }
 
-    $foodItem = FoodItem::where('id', $dish_id)
-        ->where('chef_id', auth()->id()) // ensure only the logged-in chef can update
-        ->first();
+        $foodItem = FoodItem::where('id', $dish_id)
+            ->where('chef_id', auth()->id()) // ensure only the logged-in chef can update
+            ->first();
 
-    if (!$foodItem) {
-        return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
+        if (!$foodItem) {
+            return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
+        }
+
+        $foodItem->is_recommended = $request->is_recommended;
+        $foodItem->save();
+
+        return CommonHelper::apiResponse(200, true, 'Recommendation status updated successfully!', $foodItem);
     }
 
-    $foodItem->in_stock = $request->in_stock;
-    $foodItem->save();
+    public function searchFoodItems(Request $request)
+    {
+        $user = auth()->user();
 
-    return CommonHelper::apiResponse(200, true, 'Stock status updated successfully!', $foodItem);
-}
+        $search      = $request->query('search', '');
+        $categoryId  = $request->query('category_id', 'all');
+        $inStock     = $request->query('in_stock', null);
+        $recommended = $request->query('is_recommended', null);
+        $perPage     = $request->query('per_page', 10);
 
-
-public function updateRecommendation(Request $request, $dish_id)
-{
-    $validator = Validator::make($request->all(), [
-        'is_recommended' => 'required|boolean',
-    ]);
-
-    if ($validator->fails()) {
-        return CommonHelper::apiResponse(422, false, 'Validation error', $validator->errors());
-    }
-
-    $foodItem = FoodItem::where('id', $dish_id)
-        ->where('chef_id', auth()->id()) // ensure only the logged-in chef can update
-        ->first();
-
-    if (!$foodItem) {
-        return CommonHelper::apiResponse(404, false, 'Dish not found!', null);
-    }
-
-    $foodItem->is_recommended = $request->is_recommended;
-    $foodItem->save();
-
-    return CommonHelper::apiResponse(200, true, 'Recommendation status updated successfully!', $foodItem);
-}
-
-public function searchFoodItems(Request $request)
-{
-    $user = auth()->user();
-
-    $search      = $request->query('search', '');
-    $categoryId  = $request->query('category_id', 'all');
-    $inStock     = $request->query('in_stock', null);
-    $recommended = $request->query('is_recommended', null);
-    $perPage     = $request->query('per_page', 10);
-
-    $query = \DB::table('food_dishes as fd')
-        ->select(
-            'fd.*',
-            \DB::raw("CONCAT('https://api.nutritionnook.net/', fd.image) AS image"),
-            \DB::raw("(
+        $query = \DB::table('food_dishes as fd')
+            ->select(
+                'fd.*',
+                \DB::raw("CONCAT('https://api.nutritionnook.net/', fd.image) AS image"),
+                \DB::raw("(
                 SELECT GROUP_CONCAT(c.title ORDER BY FIND_IN_SET(c.id, REPLACE(fd.category_id, ' ', '')) SEPARATOR ', ')
                 FROM categories AS c
                 WHERE FIND_IN_SET(c.id, REPLACE(fd.category_id, ' ', ''))
             ) AS category_name")
-        )
-        //->join('categories as c', 'fd.category_id', '=', 'c.id')
-        // ->where('fd.in_stock','1')
-        ->where('fd.chef_id', $user->id);
+            )
+            //->join('categories as c', 'fd.category_id', '=', 'c.id')
+            // ->where('fd.in_stock','1')
+            ->where('fd.chef_id', $user->id);
 
-    // ✅ Search filter
-    if (!empty($search)) {
-        $query->where(function ($q) use ($search) {
-            $q->where('fd.name', 'LIKE', "%{$search}%")
-              ->orWhere('fd.description', 'LIKE', "%{$search}%");
-        });
-    }
+        // ✅ Search filter
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('fd.name', 'LIKE', "%{$search}%")
+                    ->orWhere('fd.description', 'LIKE', "%{$search}%");
+            });
+        }
 
-    // ✅ Category filter
-    if ($categoryId !== "all" && $categoryId != 0 && $categoryId != 8) {
-        $query->whereRaw(
-            "FIND_IN_SET(?, REPLACE(fd.category_id, ' ', ''))",
-            [$categoryId]
+        // ✅ Category filter
+        if ($categoryId !== "all" && $categoryId != 0 && $categoryId != 8) {
+            $query->whereRaw(
+                "FIND_IN_SET(?, REPLACE(fd.category_id, ' ', ''))",
+                [$categoryId]
+            );
+        }
+
+        // ✅ In-stock & Recommended filters
+        if (!is_null($inStock) && !is_null($recommended)) {
+            $query->where('fd.in_stock', (bool)$inStock)
+                ->where('fd.is_recommended', (bool)$recommended);
+        } elseif (!is_null($inStock)) {
+            $query->where('fd.in_stock', (bool)$inStock);
+        } elseif (!is_null($recommended)) {
+            $query->where('fd.is_recommended', (bool)$recommended);
+        }
+
+        // ✅ PAGINATE
+        $paginated = $query
+            ->orderByDesc('fd.in_stock')
+            ->orderByDesc('fd.id')
+            ->paginate($perPage);
+
+        // ✅ cuisines map
+        $cuisines = \DB::table('cuisine_type')->pluck('title', 'id')->toArray();
+
+        // ✅ Transform data
+        $data = collect($paginated->items())->map(function ($item) use ($cuisines) {
+
+            $ids = explode(',', $item->cuisine_type_id);
+            $names = [];
+
+            foreach ($ids as $id) {
+                $id = trim($id);
+                if (isset($cuisines[$id])) {
+                    $names[] = $cuisines[$id];
+                }
+            }
+
+            $item->cuisine = implode(', ', $names);
+            return $item;
+        })->values();
+
+        // ✅ Pagination structure
+        $pagination = [
+            "current_page"   => $paginated->currentPage(),
+            "per_page"       => $paginated->perPage(),
+            "total"          => $paginated->total(),
+            "last_page"      => $paginated->lastPage(),
+            "from"           => $paginated->firstItem(),
+            "to"             => $paginated->lastItem(),
+            "next_page_url"  => $paginated->nextPageUrl(),
+            "prev_page_url"  => $paginated->previousPageUrl(),
+        ];
+
+        /**
+         * =========================================
+         * ✅ PRODUCTION-SAFE RESPONSE HANDLING
+         * =========================================
+         */
+
+        // 🔴 No records in database at all
+        if ($paginated->total() == 0) {
+            return $this->apiResponseOne(
+                404,
+                false,
+                'No food items found',
+                [],
+                $pagination
+            );
+        }
+
+        // 🟡 Page exists but empty (page overflow)
+        if ($data->isEmpty()) {
+            return $this->apiResponseOne(
+                200,
+                true,
+                'No more food items on this page',
+                [],
+                $pagination
+            );
+        }
+
+        // 🟢 Normal success
+        return $this->apiResponseOne(
+            200,
+            true,
+            'Filtered FoodItems fetched successfully!',
+            $data,
+            $pagination
         );
     }
 
-    // ✅ In-stock & Recommended filters
-    if (!is_null($inStock) && !is_null($recommended)) {
-        $query->where('fd.in_stock', (bool)$inStock)
-              ->where('fd.is_recommended', (bool)$recommended);
-    } elseif (!is_null($inStock)) {
-        $query->where('fd.in_stock', (bool)$inStock);
-    } elseif (!is_null($recommended)) {
-        $query->where('fd.is_recommended', (bool)$recommended);
+    public static function apiResponseOne($code, $success, $message, $data = [], $pagination = null)
+    {
+        $response = [
+            'code' => $code,
+            'success' => $success,
+            'message' => $message,
+            'data' => $data,
+        ];
+
+        if ($pagination !== null) {
+            $response['pagination'] = $pagination;
+        }
+
+        return response()->json($response, $code);
     }
+    public function getTodayDishes(Request $request, $chefId)
+    {
+        $today  = strtolower(\Carbon\Carbon::now()->format('l')); // e.g. "thursday"
+        $noAvailability = false;
+        $page    = $request->get('page', 1);
+        $perPage = $request->get('per_page', 10);
+        $categoryId = $request->get('category_id'); // âœ… optional filter
+        $tagTitle = $request->get('tag'); // ✅ NEW
+        // ✅ Tag ID find
 
-    // ✅ PAGINATE
-     $paginated = $query
-        ->orderByDesc('fd.in_stock')
-        ->orderByDesc('fd.id')
-        ->paginate($perPage);
+        // ✅ Tag ID find
+        $tagId = null;
+        if (!empty($tagTitle)) {
+            $tagData = \DB::table('tags')
+                ->whereRaw('LOWER(title) = ?', [strtolower($tagTitle)])
+                ->first();
 
-    // ✅ cuisines map
-    $cuisines = \DB::table('cuisine_type')->pluck('title', 'id')->toArray();
-
-    // ✅ Transform data
-    $data = collect($paginated->items())->map(function ($item) use ($cuisines) {
-
-        $ids = explode(',', $item->cuisine_type_id);
-        $names = [];
-
-        foreach ($ids as $id) {
-            $id = trim($id);
-            if (isset($cuisines[$id])) {
-                $names[] = $cuisines[$id];
+            if ($tagData) {
+                $tagId = $tagData->id;
             }
         }
 
-        $item->cuisine = implode(', ', $names);
-        return $item;
+        $tagId = null;
+        if (!empty($tagTitle)) {
+            $tagData = \DB::table('tags')->where('title', $tagTitle)->first();
+            if ($tagData) {
+                $tagId = $tagData->id;
+            }
+        }
 
-    })->values();
-
-    // ✅ Pagination structure
-    $pagination = [
-        "current_page"   => $paginated->currentPage(),
-        "per_page"       => $paginated->perPage(),
-        "total"          => $paginated->total(),
-        "last_page"      => $paginated->lastPage(),
-        "from"           => $paginated->firstItem(),
-        "to"             => $paginated->lastItem(),
-        "next_page_url"  => $paginated->nextPageUrl(),
-        "prev_page_url"  => $paginated->previousPageUrl(),
-    ];
-
-    /**
-     * =========================================
-     * ✅ PRODUCTION-SAFE RESPONSE HANDLING
-     * =========================================
-     */
-
-    // 🔴 No records in database at all
-    if ($paginated->total() == 0) {
-        return $this->apiResponseOne(
-            404,
-            false,
-            'No food items found',
-            [],
-            $pagination
-        );
-    }
-
-    // 🟡 Page exists but empty (page overflow)
-    if ($data->isEmpty()) {
-        return $this->apiResponseOne(
-            200,
-            true,
-            'No more food items on this page',
-            [],
-            $pagination
-        );
-    }
-
-    // 🟢 Normal success
-    return $this->apiResponseOne(
-        200,
-        true,
-        'Filtered FoodItems fetched successfully!',
-        $data,
-        $pagination
-    );
-}
-
-public static function apiResponseOne($code, $success, $message, $data = [], $pagination = null)
-{
-    $response = [
-        'code' => $code,
-        'success' => $success,
-        'message' => $message,
-        'data' => $data,
-    ];
-
-    if ($pagination !== null) {
-        $response['pagination'] = $pagination;
-    }
-
-    return response()->json($response, $code);
-}
-public function getTodayDishes(Request $request, $chefId)
-{
-    $today  = strtolower(\Carbon\Carbon::now()->format('l')); // e.g. "thursday"
-    $noAvailability = false;
-    $page    = $request->get('page', 1);
-    $perPage = $request->get('per_page', 10);
-    $categoryId = $request->get('category_id'); // âœ… optional filter
-    $tagTitle = $request->get('tag'); // ✅ NEW
-    // ✅ Tag ID find
-    
-    // ✅ Tag ID find
-    $tagId = null;
-    if (!empty($tagTitle)) {
-        $tagData = \DB::table('tags')
-            ->whereRaw('LOWER(title) = ?', [strtolower($tagTitle)])
+        $chef = \DB::table('chefs')
+            ->select('id', 'working_days')
+            ->where('id', $chefId)
             ->first();
 
-        if ($tagData) {
-            $tagId = $tagData->id;
-        } 
-    }
+        // dd($chef);
 
-    $tagId = null;
-    if (!empty($tagTitle)) {
-        $tagData = \DB::table('tags')->where('title', $tagTitle)->first();
-        if ($tagData) {
-            $tagId = $tagData->id;
+        if (!$chef) {
+            return CommonHelper::apiResponse(404, false, 'Chef not found.', []);
         }
+
+        // âœ… check today in working_days
+        $days = json_decode($chef->working_days, true);
+
+        // if (!is_array($days) || !in_array($today, $days)) {
+        //     return CommonHelper::apiResponse(200, false, "Chef not available today ($today).", []);
+        // }
+        // ✅ NEW: handle zero working days only
+        if (!is_array($days) || empty($days)) {
+            $noAvailability = true;
+        }
+
+        // ✅ EXISTING FLOW (DO NOT CHANGE)
+        elseif (!in_array($today, $days)) {
+            return CommonHelper::apiResponse(200, false, "Chef not available today ($today).", []);
+        }
+
+
+        // âœ… Cuisine mapping
+        $cuisines = \DB::table('cuisine_type')->pluck('title', 'id'); // [id => title]
+
+        // âœ… food_dishes base query
+        $query = \DB::table('food_dishes as f')
+            ->select(
+                'f.id',
+                'f.name',
+                'f.description',
+                'f.price',
+                'f.image',
+                'f.spicy_level',
+                'f.weight_option_id',
+                'f.preparation_time_id',
+                'f.ingredients',
+                'f.allergy_warning',
+                'f.cuisine_type_id',
+                'f.is_get_now_or_get_later',
+                'f.category_id',
+                'f.in_stock',
+                'f.tags'
+            )
+            ->where('f.chef_id', $chefId)
+            // ->where('f.in_stock', 1)
+            // ->where('f.tags',$tagId)
+            ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
+
+
+        if (!empty($categoryId)) {
+            $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);
+        }
+        // ✅ 🔥 TAG FILTER (NEW)
+        if (!empty($tagId)) {
+            $query->whereRaw('FIND_IN_SET(?, f.tags)', [$tagId]);
+        }
+
+        $dishes = $query->orderByDesc('f.in_stock')
+            ->orderByDesc('f.id')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+
+        $dishes->getCollection()->transform(function ($dish) use ($cuisines, $noAvailability) {
+            return [
+                "id"                  => $dish->id,
+                "name"                => $dish->name,
+                "description"         => $dish->description,
+                "price"               => $dish->price,
+                "image"               => !empty($dish->image) ? asset($dish->image) : null,
+                "spicy_level"         => $dish->spicy_level,
+                "weight_option_id"    => $dish->weight_option_id,
+                "preparation_time_id" => $dish->preparation_time_id,
+                "ingredients"         => $dish->ingredients,
+                "allergy_warning"     => $dish->allergy_warning,
+                "cuisine"             => $cuisines[$dish->cuisine_type_id] ?? null,
+                "is_get_now_or_get_later" => $dish->is_get_now_or_get_later,
+                "category_id"           => $dish->category_id,
+                "in_stock" => $noAvailability ? 0 : $dish->in_stock
+            ];
+        });
+
+        if ($dishes->isEmpty()) {
+            return CommonHelper::apiResponse(404, false, 'No dishes found for today.', []);
+        }
+
+        return CommonHelper::apiResponse(200, true, "Today's dishes fetched successfully.", $dishes);
     }
 
-    $chef = \DB::table('chefs')
-        ->select('id', 'working_days')
-        ->where('id', $chefId)
-        ->first();
-        
-    // dd($chef);
-
-    if (!$chef) {
-        return CommonHelper::apiResponse(404, false, 'Chef not found.', []);
-    }
-
-    // âœ… check today in working_days
-    $days = json_decode($chef->working_days, true);
-
-    // if (!is_array($days) || !in_array($today, $days)) {
-    //     return CommonHelper::apiResponse(200, false, "Chef not available today ($today).", []);
-    // }
-    // ✅ NEW: handle zero working days only
-    if (!is_array($days) || empty($days)) {
-        $noAvailability = true;
-    }
-    
-    // ✅ EXISTING FLOW (DO NOT CHANGE)
-    elseif (!in_array($today, $days)) {
-        return CommonHelper::apiResponse(200, false, "Chef not available today ($today).", []);
-    }
-    
-
-    // âœ… Cuisine mapping
-    $cuisines = \DB::table('cuisine_type')->pluck('title', 'id'); // [id => title]
-
-    // âœ… food_dishes base query
-    $query = \DB::table('food_dishes as f')
-        ->select(
-            'f.id',
-            'f.name',
-            'f.description',
-            'f.price',
-            'f.image',
-            'f.spicy_level',
-            'f.weight_option_id',
-            'f.preparation_time_id',
-            'f.ingredients',
-            'f.allergy_warning',
-            'f.cuisine_type_id',
-            'f.is_get_now_or_get_later',
-            'f.category_id',
-            'f.in_stock',
-            'f.tags'
-        )
-        ->where('f.chef_id', $chefId)
-        // ->where('f.in_stock', 1)
-        // ->where('f.tags',$tagId)
-        ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
-
-    
-    if (!empty($categoryId)) {
-    $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);
-}
-// ✅ 🔥 TAG FILTER (NEW)
-    if (!empty($tagId)) {
-        $query->whereRaw('FIND_IN_SET(?, f.tags)', [$tagId]);
-    }
-    
-    $dishes = $query->orderByDesc('f.in_stock')
-        ->orderByDesc('f.id')
-        ->paginate($perPage, ['*'], 'page', $page);
-    
-   
-    $dishes->getCollection()->transform(function ($dish) use ($cuisines, $noAvailability) {
-        return [
-            "id"                  => $dish->id,
-            "name"                => $dish->name,
-            "description"         => $dish->description,
-            "price"               => $dish->price,
-            "image"               => !empty($dish->image) ? asset($dish->image) : null,
-            "spicy_level"         => $dish->spicy_level,
-            "weight_option_id"    => $dish->weight_option_id,
-            "preparation_time_id" => $dish->preparation_time_id,
-            "ingredients"         => $dish->ingredients,
-            "allergy_warning"     => $dish->allergy_warning,
-            "cuisine"             => $cuisines[$dish->cuisine_type_id] ?? null,
-            "is_get_now_or_get_later" => $dish->is_get_now_or_get_later,
-            "category_id"           => $dish->category_id,
-            "in_stock" => $noAvailability ? 0 : $dish->in_stock
-        ];
-    });
-
-    if ($dishes->isEmpty()) {
-        return CommonHelper::apiResponse(404, false, 'No dishes found for today.', []);
-    }
-
-    return CommonHelper::apiResponse(200, true, "Today's dishes fetched successfully.", $dishes);
-}
 
 
+    public function getLaterDishes(Request $request, $chefId)
+    {
+        $today = strtolower(\Carbon\Carbon::now()->format('l')); // e.g. "thursday"
 
-public function getLaterDishes(Request $request, $chefId)
-{
-    $today = strtolower(\Carbon\Carbon::now()->format('l')); // e.g. "thursday"
-
-    $page       = $request->get('page', 1);
-    $perPage    = $request->get('per_page', 10);
-    $categoryId = $request->get('category_id'); // âœ… optional filter
-    // $tag = $request->input('tag'); // seasonal / traditional
-    // $tagId = 0;
-    // $tagData = \DB::table('tags')->where('title',$tag)->first();
-    // if($tagData){
-    //     $tagId = $tagData->id;
-    // }
-    // âœ… Chef record fetch
-    $chef = \DB::table('chefs')
-        ->select('id', 'working_days','name')
-        ->where('id', $chefId)
-        ->first();
-        
-    // dd($chef);
-
-    if (!$chef) {
-        return CommonHelper::apiResponse(404, false, 'Chef not found.', []);
-    }
-    
-    $tagTitle   = $request->get('tag'); // ✅ NEW
-    
-     $tagId = null;
-    if (!empty($tagTitle)) {
-        $tagData = \DB::table('tags')
-            ->whereRaw('LOWER(title) = ?', [strtolower($tagTitle)])
+        $page       = $request->get('page', 1);
+        $perPage    = $request->get('per_page', 10);
+        $categoryId = $request->get('category_id'); // âœ… optional filter
+        // $tag = $request->input('tag'); // seasonal / traditional
+        // $tagId = 0;
+        // $tagData = \DB::table('tags')->where('title',$tag)->first();
+        // if($tagData){
+        //     $tagId = $tagData->id;
+        // }
+        // âœ… Chef record fetch
+        $chef = \DB::table('chefs')
+            ->select('id', 'working_days', 'name')
+            ->where('id', $chefId)
             ->first();
 
-        if ($tagData) {
-            $tagId = $tagData->id;
-        } else {
-            return CommonHelper::apiResponse(200, false, 'Invalid tag provided.', []);
+        // dd($chef);
+
+        if (!$chef) {
+            return CommonHelper::apiResponse(404, false, 'Chef not found.', []);
         }
+
+        $tagTitle   = $request->get('tag'); // ✅ NEW
+
+        $tagId = null;
+        if (!empty($tagTitle)) {
+            $tagData = \DB::table('tags')
+                ->whereRaw('LOWER(title) = ?', [strtolower($tagTitle)])
+                ->first();
+
+            if ($tagData) {
+                $tagId = $tagData->id;
+            } else {
+                return CommonHelper::apiResponse(200, false, 'Invalid tag provided.', []);
+            }
+        }
+
+
+        // ✅ NEW: check if chef has zero availability
+        $noAvailability = false;
+
+        $days = json_decode($chef->working_days, true);
+
+        // 🔥 handle double encoded JSON
+        if (is_string($days)) {
+            $days = json_decode($days, true);
+        }
+
+        if (!is_array($days) || empty($days)) {
+            $noAvailability = true;
+            $days = [];
+        }
+
+        // ✅ 🔥 Normalize days (IMPORTANT FIX)
+        $days = array_map(function ($day) {
+            return strtolower(trim($day));
+        }, $days);
+
+        // ✅ Remove today properly
+        $laterDays = array_values(array_diff($days, [$today]));
+
+        // ✅ If no future days → no availability
+        if (empty($laterDays)) {
+            $noAvailability = true;
+        }
+
+
+        // âœ… Cuisine mapping
+        $cuisines = \DB::table('cuisine_type')->pluck('title', 'id'); // [id => title]
+
+        // âœ… food_dishes base query
+        $query = \DB::table('food_dishes as f')
+            ->select(
+                'f.id',
+                'f.name',
+                'f.description',
+                'f.price',
+                'f.image',
+                'f.spicy_level',
+                'f.weight_option_id',
+                'f.preparation_time_id',
+                'f.ingredients',
+                'f.allergy_warning',
+                'f.cuisine_type_id',
+                'f.is_get_now_or_get_later',
+                'f.category_id',
+                'f.in_stock',
+                'f.tags' // debug
+            )
+            ->where('f.chef_id', $chefId)
+            ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
+
+        // âœ… apply category filter if passed
+        if (!empty($categoryId)) {
+            $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);
+        }
+
+        // ✅ 🔥 TAG FILTER (MAIN)
+        if (!empty($tagId)) {
+            $query->whereRaw('FIND_IN_SET(?, f.tags)', [$tagId]);
+        }
+
+
+        // âœ… pagination
+        $dishes = $query->orderByDesc('f.in_stock')
+            ->orderByDesc('f.id')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // âœ… Transform dishes (without breaking pagination meta)
+        $dishes->getCollection()->transform(function ($dish) use ($cuisines, $noAvailability) {
+            return [
+                "id"                  => $dish->id,
+                "name"                => $dish->name,
+                "description"         => $dish->description,
+                "price"               => $dish->price,
+                "image"               => !empty($dish->image) ? asset($dish->image) : null,
+                "spicy_level"         => $dish->spicy_level,
+                "weight_option_id"    => $dish->weight_option_id,
+                "preparation_time_id" => $dish->preparation_time_id,
+                "ingredients"         => $dish->ingredients,
+                "allergy_warning"     => $dish->allergy_warning,
+                "cuisine"             => $cuisines[$dish->cuisine_type_id] ?? null,
+                "is_get_now_or_get_later" => $dish->is_get_now_or_get_later,
+                "category_id" => $dish->category_id,
+                'in_stock' => $noAvailability ? 0 : $dish->in_stock
+            ];
+        });
+
+        if ($dishes->isEmpty()) {
+            return CommonHelper::apiResponse(404, false, 'No later day dishes found.', []);
+        }
+
+        return CommonHelper::apiResponse(200, true, "Later day dishes fetched successfully.", $dishes);
     }
-    
-    
-    // ✅ NEW: check if chef has zero availability
-    $noAvailability = false;
 
-    $days = json_decode($chef->working_days, true);
+    public function preOrderRestaurants(Request $request)
+    {
+        $today = strtolower(now()->format('l'));
 
-// 🔥 handle double encoded JSON
-if (is_string($days)) {
-    $days = json_decode($days, true);
-}
+        $dishes = DB::table('chefs')
+            ->select(
+                'id',
+                'name',
+                'image',
+                'rating',
+                'is_pre_order',
+                'working_days'
+            )
+            ->where('is_pre_order', 1)
+            ->whereJsonContains('working_days', $today)
+            ->orderBy('id', 'desc')
+            ->get();
 
-if (!is_array($days) || empty($days)) {
-    $noAvailability = true;
-    $days = [];
-}
-
-    // ✅ 🔥 Normalize days (IMPORTANT FIX)
-    $days = array_map(function ($day) {
-        return strtolower(trim($day));
-    }, $days);
-
-    // ✅ Remove today properly
-    $laterDays = array_values(array_diff($days, [$today]));
-
-    // ✅ If no future days → no availability
-    if (empty($laterDays)) {
-        $noAvailability = true;
-    }
-
-
-    // âœ… Cuisine mapping
-    $cuisines = \DB::table('cuisine_type')->pluck('title', 'id'); // [id => title]
-
-    // âœ… food_dishes base query
-    $query = \DB::table('food_dishes as f')
-        ->select(
-            'f.id',
-            'f.name',
-            'f.description',
-            'f.price',
-            'f.image',
-            'f.spicy_level',
-            'f.weight_option_id',
-            'f.preparation_time_id',
-            'f.ingredients',
-            'f.allergy_warning',
-            'f.cuisine_type_id',
-            'f.is_get_now_or_get_later',
-            'f.category_id',
-            'f.in_stock',
-            'f.tags' // debug
-        )
-        ->where('f.chef_id', $chefId)
-        ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
-
-    // âœ… apply category filter if passed
-     if (!empty($categoryId)) {
-    $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);
-}
-
-// ✅ 🔥 TAG FILTER (MAIN)
-    if (!empty($tagId)) {
-        $query->whereRaw('FIND_IN_SET(?, f.tags)', [$tagId]);
-    }
-
-
-    // âœ… pagination
-    $dishes = $query->orderByDesc('f.in_stock')
-        ->orderByDesc('f.id')
-        ->paginate($perPage, ['*'], 'page', $page);
-
-    // âœ… Transform dishes (without breaking pagination meta)
-    $dishes->getCollection()->transform(function ($dish) use ($cuisines, $noAvailability) {
-        return [
-            "id"                  => $dish->id,
-            "name"                => $dish->name,
-            "description"         => $dish->description,
-            "price"               => $dish->price,
-            "image"               => !empty($dish->image) ? asset($dish->image) : null,
-            "spicy_level"         => $dish->spicy_level,
-            "weight_option_id"    => $dish->weight_option_id,
-            "preparation_time_id" => $dish->preparation_time_id,
-            "ingredients"         => $dish->ingredients,
-            "allergy_warning"     => $dish->allergy_warning,
-            "cuisine"             => $cuisines[$dish->cuisine_type_id] ?? null,
-            "is_get_now_or_get_later" => $dish->is_get_now_or_get_later,
-            "category_id" => $dish->category_id,
-            'in_stock' => $noAvailability ? 0 : $dish->in_stock
-        ];
-    });
-
-    if ($dishes->isEmpty()) {
-        return CommonHelper::apiResponse(404, false, 'No later day dishes found.', []);
-    }
-
-    return CommonHelper::apiResponse(200, true, "Later day dishes fetched successfully.", $dishes);
-}
-
-public function preOrderRestaurants(Request $request)
-{
-    $today = strtolower(now()->format('l'));
-
-    $dishes = DB::table('chefs')
-        ->select(
-            'id',
-            'name',
-            'image',
-            'rating',
-            'is_pre_order',
-            'working_days'
-        )
-        ->where('is_pre_order', 1)
-        ->whereJsonContains('working_days', $today)
-        ->orderBy('id', 'desc')
-        ->get();
-
-    return CommonHelper::apiResponse(
-        200,
-        true,
-        "Later day dishes fetched successfully.",
-        $dishes
-    );
-}
-
-
-
-  public function listVariousFoodDishes()
-{
-    // Agar user kaam me use nahi ho raha to hata sakte ho
-    $user = auth()->user();
-
-     $data = Tag::where('status', 'active')->get();
-
-    if ($data->isNotEmpty()) {
         return CommonHelper::apiResponse(
             200,
             true,
-            'Various Food Dishes list fetched successfully!',
-            $data
+            "Later day dishes fetched successfully.",
+            $dishes
         );
     }
 
-    return CommonHelper::apiResponse(
-        200,
-        true,
-        'No food dishes found.',
-        []
-    );
-}
-// public function getLatestFoodByTag(Request $request, $tagId)
-// {
-//     $categoryId = $request->input('category_id'); 
-
-//     $query = \DB::table('food_dishes')
-//         ->whereRaw("FIND_IN_SET(?, tags)", [$tagId]);
-
-//     if (!empty($categoryId)) {
-//         $query->where('category_id', $categoryId); 
-//     }
-
-//     $foodItems = $query->orderBy('id', 'desc')
-//         ->limit(5)
-//         ->get([
-//             'id', 'name', 'price', 'spicy_level', 'chef_id',
-//             'description', 'cuisine_type_id', 'image', 'category_id'
-//         ]);
-
-//     if ($foodItems->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No dishes found for this tag and category',
-//             []
-//         );
-//     }
-
-//     $chefIds = $foodItems->pluck('chef_id')->unique();
-//     $cuisineTypeIds = $foodItems->pluck('cuisine_type_id')->unique();
-
-//     $chefs = \DB::table('chefs')
-//         ->whereIn('id', $chefIds)
-//         ->get(['id', 'name','profile_image']);
-
-//     $ratings = \DB::table('ratings')
-//         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-//         ->whereIn('chef_id', $chefIds)
-//         ->groupBy('chef_id')
-//         ->get()
-//         ->keyBy('chef_id');
-
-//     $cuisineTypes = \DB::table('cuisine_type')
-//         ->whereIn('id', $cuisineTypeIds)
-//         ->get(['id', 'title'])
-//         ->keyBy('id');
-
-//     $foodItems->transform(function ($item) use ($chefs, $ratings, $cuisineTypes) {
-//         $chef = $chefs->firstWhere('id', $item->chef_id);
-//         $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
-
-//         $item->chef = [
-//             'id'     => $chef->id ?? null,
-//             'name'   => $chef->name ?? null,
-//             'rating' => $avgRating ? number_format($avgRating, 1) : null,
-//             'profile_image' => !empty($chef->profile_image) 
-//                                 ? asset($chef->profile_image) 
-//                                 : null
-//         ];
-
-//         $item->description = $item->description 
-//             ? (strlen($item->description) > 20 
-//                 ? substr($item->description, 0, 20) . '...' 
-//                 : $item->description) 
-//             : null;
-
-//         $item->cuisine = $cuisineTypes[$item->cuisine_type_id]->title ?? null;
-
-//         // âœ… food image
-//         $item->image = !empty($item->image) ? asset($item->image) : null;
-
-//         unset($item->chef_id, $item->cuisine_type_id);
-//         return $item;
-//     });
-
-//     return CommonHelper::apiResponse(
-//         200,
-//         true,
-//         'Latest dishes fetched successfully!',
-//         $foodItems
-//     );
-// }
 
 
-public function getLatestFoodByTag(Request $request, $tagId)
-{
-    // 1️⃣ Logged-in user
-    $user = Auth::user();
-    $today = strtolower(now()->format('l'));
-    $isGuest = !$user;
-    $token = $request->bearerToken();
+    public function listVariousFoodDishes()
+    {
+        // Agar user kaam me use nahi ho raha to hata sakte ho
+        $user = auth()->user();
 
-    if ($token) {
-        $accessToken = PersonalAccessToken::findToken($token);
+        $data = Tag::where('status', 'active')->get();
 
-        if ($accessToken) {
-            $user = $accessToken->tokenable; // 👈 logged-in user
-        }
-    }
-    $defaultLat = env('DEFAULT_LAT', 22.9952);
-$defaultLng = env('DEFAULT_LNG', 72.6041);
-    // 2️⃣ Selected user address
-    if (!$user) {
-    $userLat = $defaultLat;
-    $userLng = $defaultLng;
-} else {
-
-    $userAddress = DB::table('user_addresses')
-        ->where('user_id', $user->id)
-        ->where('is_selected', 1)
-        ->first();
-
-    if (!$userAddress) {
-        $userLat = $defaultLat;
-        $userLng = $defaultLng;
-    } else {
-        $userLat = $userAddress->latitude ?? $defaultLat;
-        $userLng = $userAddress->longitude ?? $defaultLng;
-    }
-}
-
-    // 3️⃣ Radius (KM)
-    $radius = \App\Models\Setting::value('radius_km') ?? 10;
-
-    // 4️⃣ Request inputs
-    $cuisineTypeId = $request->input('cuisine_type_id');
-    $date          = $request->input('date'); // yyyy-mm-dd
-
-    // 5️⃣ Date → day
-    $dayName = null;
-    if (!empty($date)) {
-        try {
-            $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
-        } catch (\Exception $e) {
+        if ($data->isNotEmpty()) {
             return CommonHelper::apiResponse(
-                400,
-                false,
-                'Invalid date format',
-                []
+                200,
+                true,
+                'Various Food Dishes list fetched successfully!',
+                $data
             );
         }
-    }
 
-    /**
-     * 6️⃣ Find nearby chefs (within radius)
-     */
-    $nearbyChefIds = DB::table('chefs')
-        ->select(
-            'chefs.id',
-            DB::raw("(
+        return CommonHelper::apiResponse(
+            200,
+            true,
+            'No food dishes found.',
+            []
+        );
+    }
+    // public function getLatestFoodByTag(Request $request, $tagId)
+    // {
+    //     $categoryId = $request->input('category_id'); 
+
+    //     $query = \DB::table('food_dishes')
+    //         ->whereRaw("FIND_IN_SET(?, tags)", [$tagId]);
+
+    //     if (!empty($categoryId)) {
+    //         $query->where('category_id', $categoryId); 
+    //     }
+
+    //     $foodItems = $query->orderBy('id', 'desc')
+    //         ->limit(5)
+    //         ->get([
+    //             'id', 'name', 'price', 'spicy_level', 'chef_id',
+    //             'description', 'cuisine_type_id', 'image', 'category_id'
+    //         ]);
+
+    //     if ($foodItems->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No dishes found for this tag and category',
+    //             []
+    //         );
+    //     }
+
+    //     $chefIds = $foodItems->pluck('chef_id')->unique();
+    //     $cuisineTypeIds = $foodItems->pluck('cuisine_type_id')->unique();
+
+    //     $chefs = \DB::table('chefs')
+    //         ->whereIn('id', $chefIds)
+    //         ->get(['id', 'name','profile_image']);
+
+    //     $ratings = \DB::table('ratings')
+    //         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
+    //         ->whereIn('chef_id', $chefIds)
+    //         ->groupBy('chef_id')
+    //         ->get()
+    //         ->keyBy('chef_id');
+
+    //     $cuisineTypes = \DB::table('cuisine_type')
+    //         ->whereIn('id', $cuisineTypeIds)
+    //         ->get(['id', 'title'])
+    //         ->keyBy('id');
+
+    //     $foodItems->transform(function ($item) use ($chefs, $ratings, $cuisineTypes) {
+    //         $chef = $chefs->firstWhere('id', $item->chef_id);
+    //         $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
+
+    //         $item->chef = [
+    //             'id'     => $chef->id ?? null,
+    //             'name'   => $chef->name ?? null,
+    //             'rating' => $avgRating ? number_format($avgRating, 1) : null,
+    //             'profile_image' => !empty($chef->profile_image) 
+    //                                 ? asset($chef->profile_image) 
+    //                                 : null
+    //         ];
+
+    //         $item->description = $item->description 
+    //             ? (strlen($item->description) > 20 
+    //                 ? substr($item->description, 0, 20) . '...' 
+    //                 : $item->description) 
+    //             : null;
+
+    //         $item->cuisine = $cuisineTypes[$item->cuisine_type_id]->title ?? null;
+
+    //         // âœ… food image
+    //         $item->image = !empty($item->image) ? asset($item->image) : null;
+
+    //         unset($item->chef_id, $item->cuisine_type_id);
+    //         return $item;
+    //     });
+
+    //     return CommonHelper::apiResponse(
+    //         200,
+    //         true,
+    //         'Latest dishes fetched successfully!',
+    //         $foodItems
+    //     );
+    // }
+
+
+    public function getLatestFoodByTag(Request $request, $tagId)
+    {
+        // 1️⃣ Logged-in user
+        $user = Auth::user();
+        $today = strtolower(now()->format('l'));
+        $isGuest = !$user;
+        $token = $request->bearerToken();
+
+        if ($token) {
+            $accessToken = PersonalAccessToken::findToken($token);
+
+            if ($accessToken) {
+                $user = $accessToken->tokenable; // 👈 logged-in user
+            }
+        }
+        $defaultLat = env('DEFAULT_LAT', 22.9952);
+        $defaultLng = env('DEFAULT_LNG', 72.6041);
+        // 2️⃣ Selected user address
+        if (!$user) {
+            $userLat = $defaultLat;
+            $userLng = $defaultLng;
+        } else {
+
+            $userAddress = DB::table('user_addresses')
+                ->where('user_id', $user->id)
+                ->where('is_selected', 1)
+                ->first();
+
+            if (!$userAddress) {
+                $userLat = $defaultLat;
+                $userLng = $defaultLng;
+            } else {
+                $userLat = $userAddress->latitude ?? $defaultLat;
+                $userLng = $userAddress->longitude ?? $defaultLng;
+            }
+        }
+
+        // 3️⃣ Radius (KM)
+        $radius = \App\Models\Setting::value('radius_km') ?? 10;
+
+        // 4️⃣ Request inputs
+        $cuisineTypeId = $request->input('cuisine_type_id');
+        $date          = $request->input('date'); // yyyy-mm-dd
+
+        // 5️⃣ Date → day
+        $dayName = null;
+        if (!empty($date)) {
+            try {
+                $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
+            } catch (\Exception $e) {
+                return CommonHelper::apiResponse(
+                    400,
+                    false,
+                    'Invalid date format',
+                    []
+                );
+            }
+        }
+
+        /**
+         * 6️⃣ Find nearby chefs (within radius)
+         */
+        $nearbyChefIds = DB::table('chefs')
+            ->select(
+                'chefs.id',
+                DB::raw("(
                 6371 * acos(
                     cos(radians($userLat)) *
                     cos(radians(chefs.latitude)) *
@@ -929,370 +926,370 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
                     sin(radians(chefs.latitude))
                 )
             ) AS distance")
-        )
-        ->having('distance', '<=', $radius)
-        ->whereExists(function ($query) {
-            $query->select(DB::raw(1))
-                ->from('food_dishes')
-                ->whereColumn('food_dishes.chef_id', 'chefs.id');
+            )
+            ->having('distance', '<=', $radius)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('food_dishes')
+                    ->whereColumn('food_dishes.chef_id', 'chefs.id');
                 // ->where('food_dishes.in_stock', 1);
-        })
-        // ->where('available', 1)
-        // ->whereJsonContains('working_days', $today)
-        ->pluck('id')
-        ->toArray();
+            })
+            // ->where('available', 1)
+            // ->whereJsonContains('working_days', $today)
+            ->pluck('id')
+            ->toArray();
 
-    if (empty($nearbyChefIds)) {
-        return CommonHelper::apiResponse(
-            200,
-            true,
-            'No dishes available within ' . $radius . ' km.',
-            []
-        );
-    }
+        if (empty($nearbyChefIds)) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No dishes available within ' . $radius . ' km.',
+                []
+            );
+        }
 
-    /**
-     * 7️⃣ Food dishes query (tag + radius)
-     */
-    $query = DB::table('food_dishes')
-        ->whereRaw("FIND_IN_SET(?, tags)", [$tagId])
-        ->whereIn('chef_id', $nearbyChefIds);
+        /**
+         * 7️⃣ Food dishes query (tag + radius)
+         */
+        $query = DB::table('food_dishes')
+            ->whereRaw("FIND_IN_SET(?, tags)", [$tagId])
+            ->whereIn('chef_id', $nearbyChefIds);
         // ->where('in_stock', 1);  // 👈 Add this line to filter only in-stock items;
 
-    // 👉 Cuisine filter (skip if cuisine_type_id = 1)
-    if (!empty($cuisineTypeId) && $cuisineTypeId != 1) {
-        $query->where('cuisine_type_id', $cuisineTypeId);
-    }
+        // 👉 Cuisine filter (skip if cuisine_type_id = 1)
+        if (!empty($cuisineTypeId) && $cuisineTypeId != 1) {
+            $query->where('cuisine_type_id', $cuisineTypeId);
+        }
 
-    $foodItems = $query
-        ->orderByDesc('in_stock')
-        ->orderBy('id', 'desc')
-        ->get([
-            'id',
-            'name',
-            'price',
-            'spicy_level',
-            'chef_id',
-            'description',
-            'cuisine_type_id',
-            'image',
-            'in_stock'
-        ]);
+        $foodItems = $query
+            ->orderByDesc('in_stock')
+            ->orderBy('id', 'desc')
+            ->get([
+                'id',
+                'name',
+                'price',
+                'spicy_level',
+                'chef_id',
+                'description',
+                'cuisine_type_id',
+                'image',
+                'in_stock'
+            ]);
 
-    if ($foodItems->isEmpty()) {
-        return CommonHelper::apiResponse(
-            200,
-            true,
-            'No dishes found for this tag and filters',
-            []
-        );
-    }
+        if ($foodItems->isEmpty()) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No dishes found for this tag and filters',
+                []
+            );
+        }
 
-    /**
-     * 8️⃣ Chef & cuisine data
-     */
-    $chefIds        = $foodItems->pluck('chef_id')->unique();
-    $cuisineTypeIds = $foodItems->pluck('cuisine_type_id')->unique();
+        /**
+         * 8️⃣ Chef & cuisine data
+         */
+        $chefIds        = $foodItems->pluck('chef_id')->unique();
+        $cuisineTypeIds = $foodItems->pluck('cuisine_type_id')->unique();
 
-    $chefs = DB::table('chefs')
-        ->whereIn('id', $chefIds)
-        ->get([
-            'id',
-            'name',
-            'profile_image',
-            'working_days',
-            'fssai_license_number'
-        ]);
+        $chefs = DB::table('chefs')
+            ->whereIn('id', $chefIds)
+            ->get([
+                'id',
+                'name',
+                'profile_image',
+                'working_days',
+                'fssai_license_number'
+            ]);
 
-    // 👉 Filter chefs by working day
-    if ($dayName) {
-        $chefs = $chefs->filter(function ($chef) use ($dayName) {
-            $days = json_decode($chef->working_days, true);
-            return is_array($days)
-                && in_array($dayName, array_map('strtolower', $days));
+        // 👉 Filter chefs by working day
+        if ($dayName) {
+            $chefs = $chefs->filter(function ($chef) use ($dayName) {
+                $days = json_decode($chef->working_days, true);
+                return is_array($days)
+                    && in_array($dayName, array_map('strtolower', $days));
+            });
+        }
+
+        $validChefIds = $chefs->pluck('id')->toArray();
+
+        if ($dayName && empty($validChefIds)) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No dishes found for this tag and date',
+                []
+            );
+        }
+
+        // 👉 Filter food by valid chefs
+        if ($dayName) {
+            $foodItems = $foodItems
+                ->whereIn('chef_id', $validChefIds)
+                ->values();
+        }
+
+        if ($foodItems->isEmpty()) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No dishes found for this tag and date',
+                []
+            );
+        }
+
+        /**
+         * 9️⃣ Ratings & cuisine types
+         */
+        $ratings = DB::table('ratings')
+            ->select('chef_id', DB::raw('AVG(rating) as avg_rating'))
+            ->whereIn('chef_id', $chefIds)
+            ->groupBy('chef_id')
+            ->get()
+            ->keyBy('chef_id');
+
+        $cuisineTypes = DB::table('cuisine_type')
+            ->whereIn('id', $cuisineTypeIds)
+            ->get(['id', 'title'])
+            ->keyBy('id');
+
+        /**
+         * 🔟 Final transform
+         */
+        $foodItems->transform(function ($item) use ($chefs, $ratings, $cuisineTypes) {
+            $chef = $chefs->firstWhere('id', $item->chef_id);
+            $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
+
+            $item->chef = [
+                'id'     => $chef->id ?? null,
+                'name'   => $chef->name ?? null,
+                'rating' => $avgRating ? number_format($avgRating, 1) : null,
+                'profile_image' => !empty($chef->profile_image)
+                    ? asset($chef->profile_image)
+                    : null,
+                'fssai_license_number' => $chef->fssai_license_number ?? null
+            ];
+
+            $item->description = $item->description
+                ? (strlen($item->description) > 20
+                    ? substr($item->description, 0, 20) . '...'
+                    : $item->description)
+                : null;
+
+            $item->cuisine = $cuisineTypes[$item->cuisine_type_id]->title ?? null;
+            $item->image   = $item->image ? asset($item->image) : null;
+
+            unset($item->chef_id, $item->cuisine_type_id);
+            return $item;
         });
-    }
 
-    $validChefIds = $chefs->pluck('id')->toArray();
-
-    if ($dayName && empty($validChefIds)) {
         return CommonHelper::apiResponse(
             200,
             true,
-            'No dishes found for this tag and date',
-            []
+            'Latest dishes fetched successfully!',
+            $foodItems
         );
     }
 
-    // 👉 Filter food by valid chefs
-    if ($dayName) {
-        $foodItems = $foodItems
-            ->whereIn('chef_id', $validChefIds)
-            ->values();
-    }
 
-    if ($foodItems->isEmpty()) {
-        return CommonHelper::apiResponse(
-            200,
-            true,
-            'No dishes found for this tag and date',
-            []
-        );
-    }
+    // public function getLatestFoodByTag(Request $request, $tagId)
+    // {
+    //     $cuisineTypeId = $request->input('cuisine_type_id'); 
+    //     $date          = $request->input('date'); // yyyy-mm-dd format
 
-    /**
-     * 9️⃣ Ratings & cuisine types
-     */
-    $ratings = DB::table('ratings')
-        ->select('chef_id', DB::raw('AVG(rating) as avg_rating'))
-        ->whereIn('chef_id', $chefIds)
-        ->groupBy('chef_id')
-        ->get()
-        ->keyBy('chef_id');
+    //     // ðŸ”¹ Date se day nikaalna (lowercase me)
+    //     $dayName = null;
+    //     if (!empty($date)) {
+    //         try {
+    //             $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
+    //             // e.g. "thursday"
+    //         } catch (\Exception $e) {
+    //             return CommonHelper::apiResponse(
+    //                 400,
+    //                 false,
+    //                 'Invalid date format',
+    //                 []
+    //             );
+    //         }
+    //     }
 
-    $cuisineTypes = DB::table('cuisine_type')
-        ->whereIn('id', $cuisineTypeIds)
-        ->get(['id', 'title'])
-        ->keyBy('id');
+    //     $query = \DB::table('food_dishes')
+    //         ->whereRaw("FIND_IN_SET(?, tags)", [$tagId]);
 
-    /**
-     * 🔟 Final transform
-     */
-    $foodItems->transform(function ($item) use ($chefs, $ratings, $cuisineTypes) {
-        $chef = $chefs->firstWhere('id', $item->chef_id);
-        $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
+    //     // ðŸ”¹ Cuisine type filter
+    //     if (!empty($cuisineTypeId) && $cuisineTypeId != 1) {
+    //         $query->where('cuisine_type_id', $cuisineTypeId); 
+    //     }
 
-        $item->chef = [
-            'id'     => $chef->id ?? null,
-            'name'   => $chef->name ?? null,
-            'rating' => $avgRating ? number_format($avgRating, 1) : null,
-            'profile_image' => !empty($chef->profile_image)
-                ? asset($chef->profile_image)
-                : null,
-            'fssai_license_number' => $chef->fssai_license_number ?? null
-        ];
+    //     $foodItems = $query->orderBy('id', 'desc')
+    //         ->limit(5)
+    //         ->get([
+    //             'id', 'name', 'price', 'spicy_level', 'chef_id',
+    //             'description', 'cuisine_type_id', 'image'
+    //         ]);
 
-        $item->description = $item->description
-            ? (strlen($item->description) > 20
-                ? substr($item->description, 0, 20) . '...'
-                : $item->description)
-            : null;
+    //     if ($foodItems->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No dishes found for this tag and cuisine type',
+    //             []
+    //         );
+    //     }
 
-        $item->cuisine = $cuisineTypes[$item->cuisine_type_id]->title ?? null;
-        $item->image   = $item->image ? asset($item->image) : null;
+    //     $chefIds        = $foodItems->pluck('chef_id')->unique();
+    //     $cuisineTypeIds = $foodItems->pluck('cuisine_type_id')->unique();
 
-        unset($item->chef_id, $item->cuisine_type_id);
-        return $item;
-    });
+    //     // ðŸ”¹ Chef fetch
+    //     $chefs = \DB::table('chefs')
+    //         ->whereIn('id', $chefIds)
+    //         ->get(['id', 'name','profile_image','working_days','fssai_license_number']);
 
-    return CommonHelper::apiResponse(
-        200,
-        true,
-        'Latest dishes fetched successfully!',
-        $foodItems
-    );
-}
+    //     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
+    //     if ($dayName) {
+    //         $chefs = $chefs->filter(function ($chef) use ($dayName) {
+    //             $days = json_decode($chef->working_days, true);
+    //             if (is_array($days)) {
+    //                 return in_array($dayName, array_map('strtolower', $days));
+    //             }
+    //             return false;
+    //         });
+    //     }
 
+    //     $validChefIds = $chefs->pluck('id')->toArray();
 
-// public function getLatestFoodByTag(Request $request, $tagId)
-// {
-//     $cuisineTypeId = $request->input('cuisine_type_id'); 
-//     $date          = $request->input('date'); // yyyy-mm-dd format
+    //     if ($dayName && empty($validChefIds)) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No dishes found for this tag and date',
+    //             []
+    //         );
+    //     }
 
-//     // ðŸ”¹ Date se day nikaalna (lowercase me)
-//     $dayName = null;
-//     if (!empty($date)) {
-//         try {
-//             $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
-//             // e.g. "thursday"
-//         } catch (\Exception $e) {
-//             return CommonHelper::apiResponse(
-//                 400,
-//                 false,
-//                 'Invalid date format',
-//                 []
-//             );
-//         }
-//     }
+    //     // ðŸ”¹ Filter foodItems only with valid chefs
+    //     if ($dayName) {
+    //         $foodItems = $foodItems->filter(function ($item) use ($validChefIds) {
+    //             return in_array($item->chef_id, $validChefIds);
+    //         })->values();
+    //     }
 
-//     $query = \DB::table('food_dishes')
-//         ->whereRaw("FIND_IN_SET(?, tags)", [$tagId]);
+    //     if ($foodItems->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No dishes found for this tag and date',
+    //             []
+    //         );
+    //     }
 
-//     // ðŸ”¹ Cuisine type filter
-//     if (!empty($cuisineTypeId) && $cuisineTypeId != 1) {
-//         $query->where('cuisine_type_id', $cuisineTypeId); 
-//     }
+    //     $ratings = \DB::table('ratings')
+    //         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
+    //         ->whereIn('chef_id', $chefIds)
+    //         ->groupBy('chef_id')
+    //         ->get()
+    //         ->keyBy('chef_id');
 
-//     $foodItems = $query->orderBy('id', 'desc')
-//         ->limit(5)
-//         ->get([
-//             'id', 'name', 'price', 'spicy_level', 'chef_id',
-//             'description', 'cuisine_type_id', 'image'
-//         ]);
+    //     $cuisineTypes = \DB::table('cuisine_type')
+    //         ->whereIn('id', $cuisineTypeIds)
+    //         ->get(['id', 'title'])
+    //         ->keyBy('id');
 
-//     if ($foodItems->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No dishes found for this tag and cuisine type',
-//             []
-//         );
-//     }
+    //     $foodItems->transform(function ($item) use ($chefs, $ratings, $cuisineTypes) {
+    //         $chef = $chefs->firstWhere('id', $item->chef_id);
+    //         $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
 
-//     $chefIds        = $foodItems->pluck('chef_id')->unique();
-//     $cuisineTypeIds = $foodItems->pluck('cuisine_type_id')->unique();
+    //         $item->chef = [
+    //             'id'     => $chef->id ?? null,
+    //             'name'   => $chef->name ?? null,
+    //             'rating' => $avgRating ? number_format($avgRating, 1) : null,
+    //             'profile_image' => !empty($chef->profile_image) 
+    //                                 ? asset($chef->profile_image) 
+    //                                 : null,
+    //             'fssai_license_number' => $chef->fssai_license_number ?? null
+    //         ];
 
-//     // ðŸ”¹ Chef fetch
-//     $chefs = \DB::table('chefs')
-//         ->whereIn('id', $chefIds)
-//         ->get(['id', 'name','profile_image','working_days','fssai_license_number']);
+    //         $item->description = $item->description 
+    //             ? (strlen($item->description) > 20 
+    //                 ? substr($item->description, 0, 20) . '...' 
+    //                 : $item->description) 
+    //             : null;
 
-//     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
-//     if ($dayName) {
-//         $chefs = $chefs->filter(function ($chef) use ($dayName) {
-//             $days = json_decode($chef->working_days, true);
-//             if (is_array($days)) {
-//                 return in_array($dayName, array_map('strtolower', $days));
-//             }
-//             return false;
-//         });
-//     }
+    //         $item->cuisine = $cuisineTypes[$item->cuisine_type_id]->title ?? null;
+    //         $item->image   = !empty($item->image) ? asset($item->image) : null;
 
-//     $validChefIds = $chefs->pluck('id')->toArray();
+    //         unset($item->chef_id, $item->cuisine_type_id);
+    //         return $item;
+    //     });
 
-//     if ($dayName && empty($validChefIds)) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No dishes found for this tag and date',
-//             []
-//         );
-//     }
+    //     return CommonHelper::apiResponse(
+    //         200,
+    //         true,
+    //         'Latest dishes fetched successfully!',
+    //         $foodItems
+    //     );
+    // }
 
-//     // ðŸ”¹ Filter foodItems only with valid chefs
-//     if ($dayName) {
-//         $foodItems = $foodItems->filter(function ($item) use ($validChefIds) {
-//             return in_array($item->chef_id, $validChefIds);
-//         })->values();
-//     }
+    public function getAllFoodByTag(Request $request, $tagId)
+    {
+        $page          = (int) $request->get('page', 1);
+        $perPage       = (int) $request->get('per_page', 10);
+        $cuisineTypeId = $request->input('cuisine_type_id');
+        $date          = $request->input('date');
 
-//     if ($foodItems->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No dishes found for this tag and date',
-//             []
-//         );
-//     }
+        $defaultLat = env('DEFAULT_LAT', 22.9952);
+        $defaultLng = env('DEFAULT_LNG', 72.6041);
 
-//     $ratings = \DB::table('ratings')
-//         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-//         ->whereIn('chef_id', $chefIds)
-//         ->groupBy('chef_id')
-//         ->get()
-//         ->keyBy('chef_id');
+        // =============================
+        // 🔐 USER / GUEST HANDLING
+        // =============================
+        $user = Auth::user();
+        $token = $request->bearerToken();
 
-//     $cuisineTypes = \DB::table('cuisine_type')
-//         ->whereIn('id', $cuisineTypeIds)
-//         ->get(['id', 'title'])
-//         ->keyBy('id');
-
-//     $foodItems->transform(function ($item) use ($chefs, $ratings, $cuisineTypes) {
-//         $chef = $chefs->firstWhere('id', $item->chef_id);
-//         $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
-
-//         $item->chef = [
-//             'id'     => $chef->id ?? null,
-//             'name'   => $chef->name ?? null,
-//             'rating' => $avgRating ? number_format($avgRating, 1) : null,
-//             'profile_image' => !empty($chef->profile_image) 
-//                                 ? asset($chef->profile_image) 
-//                                 : null,
-//             'fssai_license_number' => $chef->fssai_license_number ?? null
-//         ];
-
-//         $item->description = $item->description 
-//             ? (strlen($item->description) > 20 
-//                 ? substr($item->description, 0, 20) . '...' 
-//                 : $item->description) 
-//             : null;
-
-//         $item->cuisine = $cuisineTypes[$item->cuisine_type_id]->title ?? null;
-//         $item->image   = !empty($item->image) ? asset($item->image) : null;
-
-//         unset($item->chef_id, $item->cuisine_type_id);
-//         return $item;
-//     });
-
-//     return CommonHelper::apiResponse(
-//         200,
-//         true,
-//         'Latest dishes fetched successfully!',
-//         $foodItems
-//     );
-// }
-
-public function getAllFoodByTag(Request $request, $tagId)
-{
-    $page          = (int) $request->get('page', 1);
-    $perPage       = (int) $request->get('per_page', 10);
-    $cuisineTypeId = $request->input('cuisine_type_id');
-    $date          = $request->input('date');
-
-    $defaultLat = env('DEFAULT_LAT', 22.9952);
-    $defaultLng = env('DEFAULT_LNG', 72.6041);
-
-    // =============================
-    // 🔐 USER / GUEST HANDLING
-    // =============================
-    $user = Auth::user();
-    $token = $request->bearerToken();
-
-    if ($token) {
-        $accessToken = PersonalAccessToken::findToken($token);
-        if ($accessToken) {
-            $user = $accessToken->tokenable;
+        if ($token) {
+            $accessToken = PersonalAccessToken::findToken($token);
+            if ($accessToken) {
+                $user = $accessToken->tokenable;
+            }
         }
-    }
 
-    if (!$user) {
-        $userLat = $defaultLat;
-        $userLng = $defaultLng;
-    } else {
-        $userAddress = DB::table('user_addresses')
-            ->where('user_id', $user->id)
-            ->where('is_selected', 1)
-            ->first();
+        if (!$user) {
+            $userLat = $defaultLat;
+            $userLng = $defaultLng;
+        } else {
+            $userAddress = DB::table('user_addresses')
+                ->where('user_id', $user->id)
+                ->where('is_selected', 1)
+                ->first();
 
-        $userLat = $userAddress->latitude ?? $defaultLat;
-        $userLng = $userAddress->longitude ?? $defaultLng;
-    }
-
-    // =============================
-    // 📅 DAY LOGIC
-    // =============================
-    $dayName = strtolower(now()->format('l'));
-
-    if (!empty($date)) {
-        try {
-            $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
-        } catch (\Exception $e) {
-            return CommonHelper::apiResponse(400, false, 'Invalid date format', []);
+            $userLat = $userAddress->latitude ?? $defaultLat;
+            $userLng = $userAddress->longitude ?? $defaultLng;
         }
-    }
 
-    // =============================
-    // 📏 RADIUS
-    // =============================
-    $radius = \App\Models\Setting::value('radius_km') ?? 10;
+        // =============================
+        // 📅 DAY LOGIC
+        // =============================
+        $dayName = strtolower(now()->format('l'));
 
-    // =============================
-    // 🍽️ BASE QUERY (JOIN CHEFS)
-    // =============================
-$query = DB::table('food_dishes as fd')
-    ->join('chefs as c', 'c.id', '=', 'fd.chef_id')
-    ->selectRaw(
-    'fd.*,
+        if (!empty($date)) {
+            try {
+                $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
+            } catch (\Exception $e) {
+                return CommonHelper::apiResponse(400, false, 'Invalid date format', []);
+            }
+        }
+
+        // =============================
+        // 📏 RADIUS
+        // =============================
+        $radius = \App\Models\Setting::value('radius_km') ?? 10;
+
+        // =============================
+        // 🍽️ BASE QUERY (JOIN CHEFS)
+        // =============================
+        $query = DB::table('food_dishes as fd')
+            ->join('chefs as c', 'c.id', '=', 'fd.chef_id')
+            ->selectRaw(
+                'fd.*,
      c.name as chef_name,
      c.profile_image as chef_profile,
      c.fssai_license_number,
@@ -1307,413 +1304,413 @@ $query = DB::table('food_dishes as fd')
             sin(radians(c.latitude))
         )
      ) AS distance',
-    [$userLat, $userLng, $userLat]
-)
+                [$userLat, $userLng, $userLat]
+            )
 
-    // ✅ TAG FILTER
-    ->whereRaw("FIND_IN_SET(?, fd.tags)", [$tagId])
+            // ✅ TAG FILTER
+            ->whereRaw("FIND_IN_SET(?, fd.tags)", [$tagId])
 
-    // 🔥 BULLETPROOF STOCK FILTER
-    // ->whereRaw('IFNULL(fd.in_stock, 0) = 1')
+            // 🔥 BULLETPROOF STOCK FILTER
+            // ->whereRaw('IFNULL(fd.in_stock, 0) = 1')
 
-    // ✅ CHEF CONDITIONS
-    // ->where('c.available', 1)
-    ->where('c.is_verify', 1)
+            // ✅ CHEF CONDITIONS
+            // ->where('c.available', 1)
+            ->where('c.is_verify', 1)
 
-    // ✅ working days only if provided
-    ->when(!empty($dayName), function ($q) use ($dayName) {
-        // $q->whereJsonContains('c.working_days', $dayName);
-    })
+            // ✅ working days only if provided
+            ->when(!empty($dayName), function ($q) use ($dayName) {
+                // $q->whereJsonContains('c.working_days', $dayName);
+            })
 
-    // ✅ RADIUS FILTER
-    ->having('distance', '<=', $radius)
+            // ✅ RADIUS FILTER
+            ->having('distance', '<=', $radius)
 
-    // Keep available dishes at the front without hiding out-of-stock dishes.
-    ->orderByDesc('fd.in_stock')
-    ->orderBy('distance');
+            // Keep available dishes at the front without hiding out-of-stock dishes.
+            ->orderByDesc('fd.in_stock')
+            ->orderBy('distance');
 
-    // =============================
-    // 🍛 CUISINE FILTER
-    // =============================
-    if (!empty($cuisineTypeId) && $cuisineTypeId != 1) {
-        $query->where('fd.cuisine_type_id', $cuisineTypeId);
-    }
+        // =============================
+        // 🍛 CUISINE FILTER
+        // =============================
+        if (!empty($cuisineTypeId) && $cuisineTypeId != 1) {
+            $query->where('fd.cuisine_type_id', $cuisineTypeId);
+        }
 
-    $query->orderBy('fd.id', 'desc');
+        $query->orderBy('fd.id', 'desc');
 
-    // =============================
-    // 📄 PAGINATION
-    // =============================
-    $foodItems = $query->paginate($perPage, ['*'], 'page', $page);
+        // =============================
+        // 📄 PAGINATION
+        // =============================
+        $foodItems = $query->paginate($perPage, ['*'], 'page', $page);
 
-    if ($foodItems->isEmpty()) {
+        if ($foodItems->isEmpty()) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No dishes found for this tag',
+                []
+            );
+        }
+
+        // =============================
+        // ⭐ RATINGS
+        // =============================
+        $chefIds = $foodItems->pluck('chef_id')->unique();
+
+        $ratings = DB::table('ratings')
+            ->select('chef_id', DB::raw('AVG(rating) as avg_rating'))
+            ->whereIn('chef_id', $chefIds)
+            ->groupBy('chef_id')
+            ->get()
+            ->keyBy('chef_id');
+
+        // =============================
+        // ❤️ FAVOURITES
+        // =============================
+        if (!$user) {
+            $favourites = [];
+        } else {
+            $favourites = DB::table('favourite_chefs')
+                ->where('user_id', $user->id)
+                ->pluck('chef_id')
+                ->toArray();
+        }
+
+        // =============================
+        // 🔄 TRANSFORM
+        // =============================
+        $foodItems->getCollection()->transform(function ($item) use ($ratings, $favourites) {
+
+            $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
+
+            return [
+                "id"          => $item->id,
+                "name"        => $item->name,
+                "price"       => $item->price,
+                "spicy_level" => $item->spicy_level,
+                "in_stock"    => $item->in_stock,
+                "description" => $item->description
+                    ? (strlen($item->description) > 20
+                        ? substr($item->description, 0, 20) . '...'
+                        : $item->description)
+                    : null,
+                "image"  => !empty($item->image) ? asset($item->image) : null,
+
+                "chef" => [
+                    'id'            => $item->chef_id,
+                    'name'          => $item->chef_name,
+                    'rating'        => $avgRating ? number_format($avgRating, 1) : null,
+                    'profile_image' => !empty($item->chef_profile) ? asset($item->chef_profile) : null,
+                    'fssai_license_number' => $item->fssai_license_number,
+                    'is_fav'        => in_array($item->chef_id, $favourites),
+                    'distance_km'   => round($item->distance, 2),
+                ]
+            ];
+        });
+
         return CommonHelper::apiResponse(
             200,
             true,
-            'No dishes found for this tag',
-            []
+            'All dishes fetched successfully!',
+            $foodItems
         );
     }
 
-    // =============================
-    // ⭐ RATINGS
-    // =============================
-    $chefIds = $foodItems->pluck('chef_id')->unique();
 
-    $ratings = DB::table('ratings')
-        ->select('chef_id', DB::raw('AVG(rating) as avg_rating'))
-        ->whereIn('chef_id', $chefIds)
-        ->groupBy('chef_id')
-        ->get()
-        ->keyBy('chef_id');
+    //south indian and north indian chef
+    // public function getLatestChefByCuisine(Request $request, $cuisineTypeId)
+    // {
+    //     $date = $request->input('date'); // yyyy-mm-dd format
 
-    // =============================
-    // ❤️ FAVOURITES
-    // =============================
-    if (!$user) {
-        $favourites = [];
-    } else {
-        $favourites = DB::table('favourite_chefs')
-            ->where('user_id', $user->id)
-            ->pluck('chef_id')
-            ->toArray();
-    }
+    //     // ðŸ”¹ Date se day nikaalna (lowercase me)
+    //     $dayName = null;
+    //     if (!empty($date)) {
+    //         try {
+    //             $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
+    //         } catch (\Exception $e) {
+    //             return CommonHelper::apiResponse(
+    //                 400,
+    //                 false,
+    //                 'Invalid date format',
+    //                 null
+    //             );
+    //         }
+    //     }
 
-    // =============================
-    // 🔄 TRANSFORM
-    // =============================
-    $foodItems->getCollection()->transform(function ($item) use ($ratings, $favourites) {
+    //     // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
+    //     $foodItems = \DB::table('food_dishes')
+    //         ->where('cuisine_type_id', $cuisineTypeId)
+    //         ->get(['chef_id']);
 
-        $avgRating = $ratings[$item->chef_id]->avg_rating ?? null;
+    //     if ($foodItems->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No chefs found for this cuisine type',
+    //             null
+    //         );
+    //     }
 
-        return [
-            "id"          => $item->id,
-            "name"        => $item->name,
-            "price"       => $item->price,
-            "spicy_level" => $item->spicy_level,
-            "in_stock"    => $item->in_stock,
-            "description" => $item->description
-                ? (strlen($item->description) > 20
-                    ? substr($item->description, 0, 20) . '...'
-                    : $item->description)
-                : null,
-            "image"  => !empty($item->image) ? asset($item->image) : null,
+    //     $chefIds = $foodItems->pluck('chef_id')->unique();
 
-            "chef" => [
-                'id'            => $item->chef_id,
-                'name'          => $item->chef_name,
-                'rating'        => $avgRating ? number_format($avgRating, 1) : null,
-                'profile_image' => !empty($item->chef_profile) ? asset($item->chef_profile) : null,
-                'fssai_license_number' => $item->fssai_license_number,
-                'is_fav'        => in_array($item->chef_id, $favourites),
-                'distance_km'   => round($item->distance, 2),
-            ]
-        ];
-    });
+    //     // ðŸ”¹ Chef fetch (city + profile_image)
+    //     $chefs = \DB::table('chefs')
+    //         ->whereIn('id', $chefIds)
+    //         ->get(['id', 'name', 'city', 'profile_image', 'working_days']);
 
-    return CommonHelper::apiResponse(
-        200,
-        true,
-        'All dishes fetched successfully!',
-        $foodItems
-    );
-}
+    //     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
+    //     if ($dayName) {
+    //         $chefs = $chefs->filter(function ($chef) use ($dayName) {
+    //             $days = json_decode($chef->working_days, true);
+    //             if (is_array($days)) {
+    //                 return in_array($dayName, array_map('strtolower', $days));
+    //             }
+    //             return false;
+    //         });
+    //     }
 
+    //     $chefs = $chefs->take(5);
 
-//south indian and north indian chef
-// public function getLatestChefByCuisine(Request $request, $cuisineTypeId)
-// {
-//     $date = $request->input('date'); // yyyy-mm-dd format
+    //     // ðŸ”¹ Agar filter ke baad chefs empty ho toh null
+    //     if ($chefs->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No chefs found for this cuisine type and date',
+    //             null
+    //         );
+    //     }
 
-//     // ðŸ”¹ Date se day nikaalna (lowercase me)
-//     $dayName = null;
-//     if (!empty($date)) {
-//         try {
-//             $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
-//         } catch (\Exception $e) {
-//             return CommonHelper::apiResponse(
-//                 400,
-//                 false,
-//                 'Invalid date format',
-//                 null
-//             );
-//         }
-//     }
+    //     // ðŸ”¹ Ratings fetch
+    //     $ratings = \DB::table('ratings')
+    //         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
+    //         ->whereIn('chef_id', $chefIds)
+    //         ->groupBy('chef_id')
+    //         ->get()
+    //         ->keyBy('chef_id');
 
-//     // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
-//     $foodItems = \DB::table('food_dishes')
-//         ->where('cuisine_type_id', $cuisineTypeId)
-//         ->get(['chef_id']);
+    //      $favChefIds = [];
+    //         if ($userId) {
+    //             $favChefIds = \DB::table('favourite_chefs')
+    //                 ->where('user_id', $userId)
+    //                 ->whereIn('chef_id', $chefIds)
+    //                 ->pluck('chef_id')
+    //                 ->toArray();
+    //         }
+    //     // ðŸ”¹ Final response (sirf chefs ka data)
+    //     $chefData = $chefs->map(function ($chef) use ($ratings) {
+    //         $avgRating = $ratings[$chef->id]->avg_rating ?? null;
 
-//     if ($foodItems->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No chefs found for this cuisine type',
-//             null
-//         );
-//     }
+    //         return [
+    //             'id'            => $chef->id,
+    //             'name'          => $chef->name,
+    //             'city'          => $chef->city,
+    //             'rating'        => $avgRating ? number_format($avgRating, 1) : null,
+    //             'profile_image' => !empty($chef->profile_image) 
+    //                                 ? asset($chef->profile_image) 
+    //                                 : null,
+    //                                 'is_fav'        => in_array($chef->id, $favChefIds) ? true : false
+    //         ];
+    //     })->values();
 
-//     $chefIds = $foodItems->pluck('chef_id')->unique();
+    //     return CommonHelper::apiResponse(
+    //         200,
+    //         true,
+    //         'Chefs fetched successfully!',
+    //         $chefData
+    //     );
+    // }
+    // public function getLatestChefByCuisine(Request $request, $cuisineTypeId)
+    // {
+    //     $date = $request->input('date'); // yyyy-mm-dd format
 
-//     // ðŸ”¹ Chef fetch (city + profile_image)
-//     $chefs = \DB::table('chefs')
-//         ->whereIn('id', $chefIds)
-//         ->get(['id', 'name', 'city', 'profile_image', 'working_days']);
+    //     // ðŸ”¹ Token se user_id le lo
+    //     $userId = auth()->id(); // ya auth()->user()->id
+    // // dd($userId);
+    //     // ðŸ”¹ Date se day nikaalna (lowercase me)
+    //     $dayName = null;
+    //     if (!empty($date)) {
+    //         try {
+    //             $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
+    //         } catch (\Exception $e) {
+    //             return CommonHelper::apiResponse(
+    //                 400,
+    //                 false,
+    //                 'Invalid date format',
+    //                 null
+    //             );
+    //         }
+    //     }
 
-//     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
-//     if ($dayName) {
-//         $chefs = $chefs->filter(function ($chef) use ($dayName) {
-//             $days = json_decode($chef->working_days, true);
-//             if (is_array($days)) {
-//                 return in_array($dayName, array_map('strtolower', $days));
-//             }
-//             return false;
-//         });
-//     }
-    
-//     $chefs = $chefs->take(5);
+    //     // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
+    //     $foodItems = \DB::table('food_dishes')
+    //         ->where('cuisine_type_id', $cuisineTypeId)
+    //         ->get(['chef_id']);
 
-//     // ðŸ”¹ Agar filter ke baad chefs empty ho toh null
-//     if ($chefs->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No chefs found for this cuisine type and date',
-//             null
-//         );
-//     }
+    //     if ($foodItems->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No chefs found for this cuisine type',
+    //             null
+    //         );
+    //     }
 
-//     // ðŸ”¹ Ratings fetch
-//     $ratings = \DB::table('ratings')
-//         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-//         ->whereIn('chef_id', $chefIds)
-//         ->groupBy('chef_id')
-//         ->get()
-//         ->keyBy('chef_id');
+    //     $chefIds = $foodItems->pluck('chef_id')->unique();
 
-//      $favChefIds = [];
-//         if ($userId) {
-//             $favChefIds = \DB::table('favourite_chefs')
-//                 ->where('user_id', $userId)
-//                 ->whereIn('chef_id', $chefIds)
-//                 ->pluck('chef_id')
-//                 ->toArray();
-//         }
-//     // ðŸ”¹ Final response (sirf chefs ka data)
-//     $chefData = $chefs->map(function ($chef) use ($ratings) {
-//         $avgRating = $ratings[$chef->id]->avg_rating ?? null;
+    //     // ðŸ”¹ Chef fetch (city + profile_image)
+    //     $chefs = \DB::table('chefs')
+    //         ->whereIn('id', $chefIds)
+    //         ->get(['id', 'name', 'city', 'profile_image', 'working_days']);
 
-//         return [
-//             'id'            => $chef->id,
-//             'name'          => $chef->name,
-//             'city'          => $chef->city,
-//             'rating'        => $avgRating ? number_format($avgRating, 1) : null,
-//             'profile_image' => !empty($chef->profile_image) 
-//                                 ? asset($chef->profile_image) 
-//                                 : null,
-//                                 'is_fav'        => in_array($chef->id, $favChefIds) ? true : false
-//         ];
-//     })->values();
+    //     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
+    //     if ($dayName) {
+    //         $chefs = $chefs->filter(function ($chef) use ($dayName) {
+    //             $days = json_decode($chef->working_days, true);
+    //             if (is_array($days)) {
+    //                 return in_array($dayName, array_map('strtolower', $days));
+    //             }
+    //             return false;
+    //         });
+    //     }
 
-//     return CommonHelper::apiResponse(
-//         200,
-//         true,
-//         'Chefs fetched successfully!',
-//         $chefData
-//     );
-// }
-// public function getLatestChefByCuisine(Request $request, $cuisineTypeId)
-// {
-//     $date = $request->input('date'); // yyyy-mm-dd format
+    //     // ðŸ”¹ Agar filter ke baad chefs empty ho toh null
+    //     if ($chefs->isEmpty()) {
+    //         return CommonHelper::apiResponse(
+    //             200,
+    //             true,
+    //             'No chefs found for this cuisine type and date',
+    //             null
+    //         );
+    //     }
 
-//     // ðŸ”¹ Token se user_id le lo
-//     $userId = auth()->id(); // ya auth()->user()->id
-// // dd($userId);
-//     // ðŸ”¹ Date se day nikaalna (lowercase me)
-//     $dayName = null;
-//     if (!empty($date)) {
-//         try {
-//             $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
-//         } catch (\Exception $e) {
-//             return CommonHelper::apiResponse(
-//                 400,
-//                 false,
-//                 'Invalid date format',
-//                 null
-//             );
-//         }
-//     }
+    //     // ðŸ”¹ Ratings fetch
+    //     $ratings = \DB::table('ratings')
+    //         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
+    //         ->whereIn('chef_id', $chefIds)
+    //         ->groupBy('chef_id')
+    //         ->get()
+    //         ->keyBy('chef_id');
 
-//     // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
-//     $foodItems = \DB::table('food_dishes')
-//         ->where('cuisine_type_id', $cuisineTypeId)
-//         ->get(['chef_id']);
+    //     // ðŸ”¹ Favourite chefs fetch based on token user_id
+    //     $favChefIds = [];
+    //     if ($userId) {
+    //         $favChefIds = \DB::table('favourite_chefs')
+    //             ->where('user_id', $userId)
+    //             ->whereIn('chef_id', $chefIds)
+    //             ->pluck('chef_id')
+    //             ->toArray();
+    //     }
 
-//     if ($foodItems->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No chefs found for this cuisine type',
-//             null
-//         );
-//     }
+    //     // ðŸ”¹ Final response (sirf chefs ka data)
+    //     $chefData = $chefs->map(function ($chef) use ($ratings, $favChefIds) {
+    //         $avgRating = $ratings[$chef->id]->avg_rating ?? null;
 
-//     $chefIds = $foodItems->pluck('chef_id')->unique();
+    //         return [
+    //             'id'            => $chef->id,
+    //             'name'          => $chef->name,
+    //             'city'          => $chef->city,
+    //             'rating'        => $avgRating ? number_format($avgRating, 1) : null,
+    //             'profile_image' => !empty($chef->profile_image) ? asset($chef->profile_image) : null,
+    //             'is_fav'        => in_array($chef->id, $favChefIds)
+    //         ];
+    //     })->values();
 
-//     // ðŸ”¹ Chef fetch (city + profile_image)
-//     $chefs = \DB::table('chefs')
-//         ->whereIn('id', $chefIds)
-//         ->get(['id', 'name', 'city', 'profile_image', 'working_days']);
+    //     return CommonHelper::apiResponse(
+    //         200,
+    //         true,
+    //         'Chefs fetched successfully!',
+    //         $chefData
+    //     );
+    // }
+    //18/02/2026
+    public function getLatestChefByCuisine(Request $request, $cuisineTypeId)
+    {
+        $date   = $request->input('date');
+        $radius = $request->input('radius', 10); // KM
+        $today = strtolower(now()->format('l'));
+        $user = auth()->user();
+        $token = $request->bearerToken();
 
-//     // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
-//     if ($dayName) {
-//         $chefs = $chefs->filter(function ($chef) use ($dayName) {
-//             $days = json_decode($chef->working_days, true);
-//             if (is_array($days)) {
-//                 return in_array($dayName, array_map('strtolower', $days));
-//             }
-//             return false;
-//         });
-//     }
+        if ($token) {
+            $accessToken = PersonalAccessToken::findToken($token);
 
-//     // ðŸ”¹ Agar filter ke baad chefs empty ho toh null
-//     if ($chefs->isEmpty()) {
-//         return CommonHelper::apiResponse(
-//             200,
-//             true,
-//             'No chefs found for this cuisine type and date',
-//             null
-//         );
-//     }
-
-//     // ðŸ”¹ Ratings fetch
-//     $ratings = \DB::table('ratings')
-//         ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-//         ->whereIn('chef_id', $chefIds)
-//         ->groupBy('chef_id')
-//         ->get()
-//         ->keyBy('chef_id');
-
-//     // ðŸ”¹ Favourite chefs fetch based on token user_id
-//     $favChefIds = [];
-//     if ($userId) {
-//         $favChefIds = \DB::table('favourite_chefs')
-//             ->where('user_id', $userId)
-//             ->whereIn('chef_id', $chefIds)
-//             ->pluck('chef_id')
-//             ->toArray();
-//     }
-
-//     // ðŸ”¹ Final response (sirf chefs ka data)
-//     $chefData = $chefs->map(function ($chef) use ($ratings, $favChefIds) {
-//         $avgRating = $ratings[$chef->id]->avg_rating ?? null;
-
-//         return [
-//             'id'            => $chef->id,
-//             'name'          => $chef->name,
-//             'city'          => $chef->city,
-//             'rating'        => $avgRating ? number_format($avgRating, 1) : null,
-//             'profile_image' => !empty($chef->profile_image) ? asset($chef->profile_image) : null,
-//             'is_fav'        => in_array($chef->id, $favChefIds)
-//         ];
-//     })->values();
-
-//     return CommonHelper::apiResponse(
-//         200,
-//         true,
-//         'Chefs fetched successfully!',
-//         $chefData
-//     );
-// }
-//18/02/2026
-public function getLatestChefByCuisine(Request $request, $cuisineTypeId)
-{
-    $date   = $request->input('date');
-    $radius = $request->input('radius', 10); // KM
-    $today = strtolower(now()->format('l'));
-    $user = auth()->user();
-    $token = $request->bearerToken();
-
-    if ($token) {
-        $accessToken = PersonalAccessToken::findToken($token);
-
-        if ($accessToken) {
-            $user = $accessToken->tokenable; // 👈 logged-in user
+            if ($accessToken) {
+                $user = $accessToken->tokenable; // 👈 logged-in user
+            }
         }
-    }
-    $isGuest = !$user;
-    $defaultLat = env('DEFAULT_LAT', 22.9952);
-$defaultLng = env('DEFAULT_LNG', 72.6041);
+        $isGuest = !$user;
+        $defaultLat = env('DEFAULT_LAT', 22.9952);
+        $defaultLng = env('DEFAULT_LNG', 72.6041);
 
-    if (!$user) {
-    $userLat = $defaultLat;
-    $userLng = $defaultLng;
-} else {
+        if (!$user) {
+            $userLat = $defaultLat;
+            $userLng = $defaultLng;
+        } else {
 
-    $userAddress = DB::table('user_addresses')
-        ->where('user_id', $user->id)
-        ->where('is_selected', 1)
-        ->first();
+            $userAddress = DB::table('user_addresses')
+                ->where('user_id', $user->id)
+                ->where('is_selected', 1)
+                ->first();
 
-    if (!$userAddress) {
-        $userLat = $defaultLat;
-        $userLng = $defaultLng;
-    } else {
-        $userLat = $userAddress->latitude ?? $defaultLat;
-        $userLng = $userAddress->longitude ?? $defaultLng;
-    }
-}
-
-    // 🔹 Date → Day name
-    $dayName = null;
-    if (!empty($date)) {
-        try {
-            $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
-        } catch (\Exception $e) {
-            return CommonHelper::apiResponse(400, false, 'Invalid date format', null);
+            if (!$userAddress) {
+                $userLat = $defaultLat;
+                $userLng = $defaultLng;
+            } else {
+                $userLat = $userAddress->latitude ?? $defaultLat;
+                $userLng = $userAddress->longitude ?? $defaultLng;
+            }
         }
-    }
 
-    // Cuisine ID 1 represents the "All" tab, so it must not restrict chefs
-    // to dishes whose cuisine_type_id happens to be 1.
-    $chefIds = null;
-    if ((int) $cuisineTypeId !== 1) {
-        $chefIds = DB::table('food_dishes')
-            ->where('cuisine_type_id', $cuisineTypeId)
-            ->pluck('chef_id')
-            ->unique()
-            ->values();
-    }
+        // 🔹 Date → Day name
+        $dayName = null;
+        if (!empty($date)) {
+            try {
+                $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
+            } catch (\Exception $e) {
+                return CommonHelper::apiResponse(400, false, 'Invalid date format', null);
+            }
+        }
 
-    if ($chefIds !== null && $chefIds->isEmpty()) {
-        return CommonHelper::apiResponse(
-            200,
-            true,
-            'No chefs found for this cuisine type',
-            null
-        );
-    }
+        // Cuisine ID 1 represents the "All" tab, so it must not restrict chefs
+        // to dishes whose cuisine_type_id happens to be 1.
+        $chefIds = null;
+        if ((int) $cuisineTypeId !== 1) {
+            $chefIds = DB::table('food_dishes')
+                ->where('cuisine_type_id', $cuisineTypeId)
+                ->pluck('chef_id')
+                ->unique()
+                ->values();
+        }
 
-    // 🔹 Chef query with distance calculation
-    $chefsQuery = DB::table('chefs')
-        ->select(
-            'id',
-            'name',
-            'city',
-            'profile_image',
-            'working_days',
-            'latitude',
-            'longitude',
-            'available',
-            DB::raw('EXISTS (
+        if ($chefIds !== null && $chefIds->isEmpty()) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No chefs found for this cuisine type',
+                null
+            );
+        }
+
+        // 🔹 Chef query with distance calculation
+        $chefsQuery = DB::table('chefs')
+            ->select(
+                'id',
+                'name',
+                'city',
+                'profile_image',
+                'working_days',
+                'latitude',
+                'longitude',
+                'available',
+                DB::raw('EXISTS (
                 SELECT 1
                 FROM food_dishes
                 WHERE food_dishes.chef_id = chefs.id
                   AND food_dishes.in_stock = 1
             ) AS has_in_stock_items')
-        )
-        ->selectRaw("
+            )
+            ->selectRaw("
             (6371 * acos(
                 cos(radians(?))
                 * cos(radians(latitude))
@@ -1722,144 +1719,144 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
                 * sin(radians(latitude))
             )) AS distance
         ", [$userLat, $userLng, $userLat])
-        ->having('distance', '<=', $radius);
+            ->having('distance', '<=', $radius);
 
-    if ($chefIds !== null) {
-        $chefsQuery->whereIn('id', $chefIds);
-    }
+        if ($chefIds !== null) {
+            $chefsQuery->whereIn('id', $chefIds);
+        }
 
-    $chefs = $chefsQuery
-        // ->whereJsonContains('working_days', $today)
-        ->whereExists(function ($query) {
-        $query->select(DB::raw(1))
-            ->from('food_dishes')
-            ->whereColumn('food_dishes.chef_id', 'chefs.id');
-            // ->where('food_dishes.in_stock', 1);
-    })
-    // ->where('available', 1)
-        ->orderByDesc('has_in_stock_items')
-        ->orderBy('distance')
-        ->get();
+        $chefs = $chefsQuery
+            // ->whereJsonContains('working_days', $today)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('food_dishes')
+                    ->whereColumn('food_dishes.chef_id', 'chefs.id');
+                // ->where('food_dishes.in_stock', 1);
+            })
+            // ->where('available', 1)
+            ->orderByDesc('has_in_stock_items')
+            ->orderBy('distance')
+            ->get();
 
-    // 🔹 Filter by working day
-    if ($dayName) {
-        $chefs = $chefs->filter(function ($chef) use ($dayName) {
-            $days = json_decode($chef->working_days, true);
-            return is_array($days) && in_array($dayName, array_map('strtolower', $days));
+        // 🔹 Filter by working day
+        if ($dayName) {
+            $chefs = $chefs->filter(function ($chef) use ($dayName) {
+                $days = json_decode($chef->working_days, true);
+                return is_array($days) && in_array($dayName, array_map('strtolower', $days));
+            })->values();
+        }
+
+        if ($chefs->isEmpty()) {
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'No chefs found for this cuisine type and filters',
+                null
+            );
+        }
+
+        $resultChefIds = $chefs->pluck('id');
+
+        // 🔹 Ratings
+        $ratings = \DB::table('ratings')
+            ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
+            ->whereIn('chef_id', $resultChefIds)
+            ->groupBy('chef_id')
+            ->get()
+            ->keyBy('chef_id');
+
+        // 🔹 Favourite chefs
+
+        if (isset($user)) {
+            $favChefIds = \DB::table('favourite_chefs')
+                ->where('user_id', $user->id)
+                ->whereIn('chef_id', $resultChefIds)
+                ->pluck('chef_id')
+                ->toArray();
+        } else {
+            $favChefIds = [];
+        }
+
+        // 🔹 Final response
+        $chefData = $chefs->map(function ($chef) use ($ratings, $favChefIds) {
+            return [
+                'id'            => $chef->id,
+                'name'          => $chef->name,
+                'city'          => $chef->city,
+                'rating'        => isset($ratings[$chef->id])
+                    ? number_format($ratings[$chef->id]->avg_rating, 1)
+                    : null,
+                'distance_km'   => round($chef->distance, 2),
+                'profile_image' => $chef->profile_image ? asset($chef->profile_image) : null,
+                'is_fav'        => in_array($chef->id, $favChefIds),
+                'available'     => $chef->available
+            ];
         })->values();
-    }
 
-    if ($chefs->isEmpty()) {
         return CommonHelper::apiResponse(
             200,
             true,
-            'No chefs found for this cuisine type and filters',
-            null
+            'Chefs fetched successfully!',
+            $chefData
         );
     }
 
-    $resultChefIds = $chefs->pluck('id');
-
-    // 🔹 Ratings
-    $ratings = \DB::table('ratings')
-        ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-        ->whereIn('chef_id', $resultChefIds)
-        ->groupBy('chef_id')
-        ->get()
-        ->keyBy('chef_id');
-
-    // 🔹 Favourite chefs
-    
-    if(isset($user)){
-    $favChefIds = \DB::table('favourite_chefs')
-        ->where('user_id', $user->id)
-        ->whereIn('chef_id', $resultChefIds)
-        ->pluck('chef_id')
-        ->toArray();
-    }else{
-        $favChefIds = [];
-    }
-
-    // 🔹 Final response
-    $chefData = $chefs->map(function ($chef) use ($ratings, $favChefIds) {
-        return [
-            'id'            => $chef->id,
-            'name'          => $chef->name,
-            'city'          => $chef->city,
-            'rating'        => isset($ratings[$chef->id])
-                                ? number_format($ratings[$chef->id]->avg_rating, 1)
-                                : null,
-            'distance_km'   => round($chef->distance, 2),
-            'profile_image' => $chef->profile_image ? asset($chef->profile_image) : null,
-            'is_fav'        => in_array($chef->id, $favChefIds),
-            'available'     => $chef->available
-        ];
-    })->values();
-
-    return CommonHelper::apiResponse(
-        200,
-        true,
-        'Chefs fetched successfully!',
-        $chefData
-    );
-}
 
 
 
 
+    public function getAllChefByCuisine(Request $request, $cuisineTypeId)
+    {
+        $page    = $request->get('page', 1);
+        $perPage = $request->get('per_page', 10);
+        $date    = $request->input('date');
 
-public function getAllChefByCuisine(Request $request, $cuisineTypeId)
-{
-    $page    = $request->get('page', 1);
-    $perPage = $request->get('per_page', 10);
-    $date    = $request->input('date'); 
-
-    // ðŸ”¹ Token se user_id lo
-    $userId = auth()->id(); // âœ… token se authenticated user ka id
-    $defaultLat = env('DEFAULT_LAT', 22.9952);
-    $defaultLng = env('DEFAULT_LNG', 72.6041);
-    $userAddress = $userId
-        ? DB::table('user_addresses')
+        // ðŸ”¹ Token se user_id lo
+        $userId = auth()->id(); // âœ… token se authenticated user ka id
+        $defaultLat = env('DEFAULT_LAT', 22.9952);
+        $defaultLng = env('DEFAULT_LNG', 72.6041);
+        $userAddress = $userId
+            ? DB::table('user_addresses')
             ->where('user_id', $userId)
             ->where('is_selected', 1)
             ->first()
-        : null;
-    $userLat = $userAddress->latitude ?? $defaultLat;
-    $userLng = $userAddress->longitude ?? $defaultLng;
-    $radius = \App\Models\Setting::value('radius_km') ?? 10;
+            : null;
+        $userLat = $userAddress->latitude ?? $defaultLat;
+        $userLng = $userAddress->longitude ?? $defaultLng;
+        $radius = \App\Models\Setting::value('radius_km') ?? 10;
 
-    // ðŸ”¹ Date se day nikaalna (lowercase me)
-    $dayName = null;
-    if (!empty($date)) {
-        try {
-            $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l')); 
-        } catch (\Exception $e) {
-            return CommonHelper::apiResponse(400, false, 'Invalid date format', null);
+        // ðŸ”¹ Date se day nikaalna (lowercase me)
+        $dayName = null;
+        if (!empty($date)) {
+            try {
+                $dayName = strtolower(\Carbon\Carbon::parse($date)->format('l'));
+            } catch (\Exception $e) {
+                return CommonHelper::apiResponse(400, false, 'Invalid date format', null);
+            }
         }
-    }
 
-    // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
-    $chefIds = null;
-    if ((int) $cuisineTypeId !== 1) {
-        $chefIds = DB::table('food_dishes')
-            ->where('cuisine_type_id', $cuisineTypeId)
-            ->pluck('chef_id')
-            ->unique()
-            ->toArray();
-    }
+        // ðŸ”¹ Cuisine type ke hisaab se food fetch karo (sirf chef_id chahiye)
+        $chefIds = null;
+        if ((int) $cuisineTypeId !== 1) {
+            $chefIds = DB::table('food_dishes')
+                ->where('cuisine_type_id', $cuisineTypeId)
+                ->pluck('chef_id')
+                ->unique()
+                ->toArray();
+        }
 
-    if ($chefIds !== null && empty($chefIds)) {
-        return CommonHelper::apiResponse(200, true, 'No chefs found for this cuisine type', null);
-    }
+        if ($chefIds !== null && empty($chefIds)) {
+            return CommonHelper::apiResponse(200, true, 'No chefs found for this cuisine type', null);
+        }
 
-    // ðŸ”¹ Chef fetch (city + profile_image)
-    $query = DB::table('chefs');
+        // ðŸ”¹ Chef fetch (city + profile_image)
+        $query = DB::table('chefs');
 
-    if ($chefIds !== null) {
-        $query->whereIn('id', $chefIds);
-    }
+        if ($chefIds !== null) {
+            $query->whereIn('id', $chefIds);
+        }
 
-    $query->selectRaw('chefs.*, EXISTS (
+        $query->selectRaw('chefs.*, EXISTS (
         SELECT 1
         FROM food_dishes
         WHERE food_dishes.chef_id = chefs.id
@@ -1873,73 +1870,64 @@ public function getAllChefByCuisine(Request $request, $cuisineTypeId)
             sin(radians(chefs.latitude))
         )
     ) AS distance', [$userLat, $userLng, $userLat])
-        ->having('distance', '<=', $radius)
-        ->orderByDesc('has_in_stock_items');
+            ->having('distance', '<=', $radius)
+            ->orderByDesc('has_in_stock_items');
 
-    $chefs = $query->paginate($perPage, ['*'], 'page', $page);
+        $chefs = $query->paginate($perPage, ['*'], 'page', $page);
 
-    // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
-    if ($dayName) {
-        $filtered = $chefs->getCollection()->filter(function ($chef) use ($dayName) {
-            $days = json_decode($chef->working_days, true);
-            if (is_array($days)) {
-                return in_array($dayName, array_map('strtolower', $days));
-            }
-            return false;
-        })->values();
-        $chefs->setCollection($filtered);
-    }
+        // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
+        if ($dayName) {
+            $filtered = $chefs->getCollection()->filter(function ($chef) use ($dayName) {
+                $days = json_decode($chef->working_days, true);
+                if (is_array($days)) {
+                    return in_array($dayName, array_map('strtolower', $days));
+                }
+                return false;
+            })->values();
+            $chefs->setCollection($filtered);
+        }
 
-    if ($chefs->isEmpty()) {
-        return CommonHelper::apiResponse(200, true, 'No chefs found for this cuisine type' . ($dayName ? ' and date' : ''), null);
-    }
+        if ($chefs->isEmpty()) {
+            return CommonHelper::apiResponse(200, true, 'No chefs found for this cuisine type' . ($dayName ? ' and date' : ''), null);
+        }
 
-    $resultChefIds = $chefs->pluck('id');
+        $resultChefIds = $chefs->pluck('id');
 
-    // ðŸ”¹ Ratings fetch
-    $ratings = \DB::table('ratings')
-        ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
-        ->whereIn('chef_id', $resultChefIds)
-        ->groupBy('chef_id')
-        ->get()
-        ->keyBy('chef_id');
-
-    // ðŸ”¹ Favourite chefs fetch
-    $favChefIds = [];
-    if ($userId) {
-        $favChefIds = \DB::table('favourite_chefs')
-            ->where('user_id', $userId)
+        // ðŸ”¹ Ratings fetch
+        $ratings = \DB::table('ratings')
+            ->select('chef_id', \DB::raw('AVG(rating) as avg_rating'))
             ->whereIn('chef_id', $resultChefIds)
-            ->pluck('chef_id')
-            ->toArray();
+            ->groupBy('chef_id')
+            ->get()
+            ->keyBy('chef_id');
+
+        // ðŸ”¹ Favourite chefs fetch
+        $favChefIds = [];
+        if ($userId) {
+            $favChefIds = \DB::table('favourite_chefs')
+                ->where('user_id', $userId)
+                ->whereIn('chef_id', $resultChefIds)
+                ->pluck('chef_id')
+                ->toArray();
+        }
+
+        // dd($chefs);
+
+        // ðŸ”¹ Transform paginated collection
+        $chefs->getCollection()->transform(function ($chef) use ($ratings, $favChefIds) {
+            $avgRating = $ratings[$chef->id]->avg_rating ?? null;
+
+            return [
+                'id'            => $chef->id,
+                'name'          => $chef->name,
+                'city'          => $chef->city,
+                'rating'        => $avgRating ? number_format($avgRating, 1) : null,
+                'profile_image' => !empty($chef->profile_image) ? asset($chef->profile_image) : null,
+                'is_fav'        => in_array($chef->id, $favChefIds),
+                'available'   => $chef->available
+            ];
+        });
+
+        return CommonHelper::apiResponse(200, true, 'Chefs fetched successfully!', $chefs);
     }
-    
-    // dd($chefs);
-
-    // ðŸ”¹ Transform paginated collection
-    $chefs->getCollection()->transform(function ($chef) use ($ratings, $favChefIds) {
-        $avgRating = $ratings[$chef->id]->avg_rating ?? null;
-
-        return [
-            'id'            => $chef->id,
-            'name'          => $chef->name,
-            'city'          => $chef->city,
-            'rating'        => $avgRating ? number_format($avgRating, 1) : null,
-            'profile_image' => !empty($chef->profile_image) ? asset($chef->profile_image) : null,
-            'is_fav'        => in_array($chef->id, $favChefIds),
-            'available'   => $chef->available
-        ];
-    });
-
-    return CommonHelper::apiResponse(200, true, 'Chefs fetched successfully!', $chefs);
-}
-
-
-
-
-
-
-
-
-
 }
