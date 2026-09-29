@@ -19,6 +19,7 @@ class FoodDish extends Model
         'name',
         'description',
         'price',
+        'base_price',
         'image',
         'category_id',
         'spicy_level',
@@ -41,6 +42,7 @@ class FoodDish extends Model
         // 'is_active' => 'boolean',
         'is_top_picks' => 'boolean',
         'price' => 'decimal:2',
+        'base_price' => 'decimal:2',
     ];
 
     /**
