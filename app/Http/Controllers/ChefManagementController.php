@@ -731,17 +731,17 @@ class ChefManagementController extends Controller
         return redirect()->route('chefs.index')->with('success', 'Chef deleted successfully.');
     }
 
-    public function toggleIsOpned(Request $request)
-    {
-        $chef = Chef::findOrFail($request->id);
-        $chef->available = $request->available;
-        $chef->save();
+    // public function toggleIsOpned(Request $request)
+    // {
+    //     $chef = Chef::findOrFail($request->id);
+    //     $chef->available = $request->available;
+    //     $chef->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Chef online status updated successfully.',
-        ]);
-    }
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Chef online status updated successfully.',
+    //     ]);
+    // }
 
     public function updateStatusOrder(Request $request)
     {

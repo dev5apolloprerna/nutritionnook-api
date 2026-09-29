@@ -33,6 +33,21 @@
     .verify-toggle:checked::before {
         transform: translateX(26px);
     }
+
+    .chef-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+    }
+
+    .chef-status-online {
+        color: #198754;
+    }
+
+    .chef-status-offline {
+        color: #6c757d;
+    }
 </style>
 
 
@@ -112,8 +127,19 @@
                                     <td>{{ $chef->email }}</td>
                                     <td>{{ $chef->address ?? 'N/A' }}</td>
                                     <td>
-                                        <input type="checkbox" class="toggle-switch" data-id="{{ $chef->id }}"
-                                            {{ $chef->available ? 'checked' : '' }}>
+                                        <!-- <input type="checkbox" class="toggle-switch" data-id="{{ $chef->id }}"
+                                            {{ $chef->available ? 'checked' : '' }}> -->
+                                        @if ($chef->available)
+                                            <span class="chef-status chef-status-online" title="Online" aria-label="Chef is online">
+                                                <i class="fas fa-circle" aria-hidden="true"></i>
+                                                Online
+                                            </span>
+                                        @else
+                                            <span class="chef-status chef-status-offline" title="Offline" aria-label="Chef is offline">
+                                                <i class="far fa-circle" aria-hidden="true"></i>
+                                                Offline
+                                            </span>
+                                        @endif
                                     </td>
                                     <td>
     <input type="checkbox"
@@ -144,7 +170,7 @@
 
                             @if ($chefs->isEmpty())
                                 <tr>
-                                    <td colspan="8" class="text-center">No Chefs Found.</td>
+                                    <td colspan="9" class="text-center">No Chefs Found.</td>
                                 </tr>
                             @endif
                         </tbody>
@@ -155,7 +181,7 @@
     </div>
 
     {{-- Toggle Switch Styling --}}
-    <style>
+    <!-- <style>
         .toggle-switch {
             position: relative;
             width: 50px;
@@ -187,11 +213,11 @@
         .toggle-switch:checked::before {
             transform: translateX(26px);
         }
-    </style>
+    </style> -->
 
     {{-- jQuery + SweetAlert --}}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
+    <!-- <script>
         $(document).ready(function() {
             $('.toggle-switch').change(function() {
                 let chefId = $(this).data('id');
@@ -233,7 +259,7 @@
                 });
             });
         });
-    </script>
+    </script> -->
     <script>
         $('.verify-toggle').change(function () {
     let chefId = $(this).data('id');
