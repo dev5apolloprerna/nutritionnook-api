@@ -2240,6 +2240,32 @@
           "response": []
         },
         {
+          "name": "list-preparation-times",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/list-preparation-times",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "list-preparation-times"
+              ]
+            },
+            "description": "Returns preparation-time options in 15-minute intervals for the chef dish form.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
           "name": "add-food-items",
           "request": {
             "method": "POST",
@@ -2298,7 +2324,7 @@
                 },
                 {
                   "key": "preparation_time",
-                  "value": "1",
+                  "value": "15",
                   "type": "text",
                   "disabled": false
                 },
@@ -2465,7 +2491,7 @@
                 },
                 {
                   "key": "preparation_time",
-                  "value": "1",
+                  "value": "15",
                   "type": "text",
                   "disabled": false
                 },

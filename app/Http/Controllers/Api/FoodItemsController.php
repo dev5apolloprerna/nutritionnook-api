@@ -18,6 +18,29 @@ use App\Models\Tag;
 
 class FoodItemsController extends Controller
 {
+    private const PREPARATION_TIME_MINIMUM = 15;
+    private const PREPARATION_TIME_MAXIMUM = 120;
+    private const PREPARATION_TIME_INTERVAL = 15;
+
+    public function listPreparationTimes()
+    {
+        $preparationTimes = collect(range(
+            self::PREPARATION_TIME_MINIMUM,
+            self::PREPARATION_TIME_MAXIMUM,
+            self::PREPARATION_TIME_INTERVAL
+        ))->map(fn (int $minutes) => [
+            'value' => $minutes,
+            'label' => $minutes . ' minutes',
+        ]);
+
+        return CommonHelper::apiResponse(
+            200,
+            true,
+            'Preparation times fetched successfully!',
+            $preparationTimes
+        );
+    }
+    
     public function listFoodItems()
     {
         $user = auth()->user();
@@ -50,6 +73,8 @@ class FoodItemsController extends Controller
             'name'            => 'required|string',
             'image'           => 'required|image',
             'price'           => 'required|numeric',
+            'description'     => 'nullable|string',
+            'ingredients'     => 'nullable|string',
             // 'category_id'     => 'required|exists:categories,id',
             'category_id' => 'required|string',
             'preparation_time' => 'required',
@@ -141,6 +166,8 @@ class FoodItemsController extends Controller
             'id'              => 'required|exists:food_dishes,id',
             'name'            => 'required|string',
             'price'           => 'required|numeric',
+            'description'     => 'nullable|string',
+            'ingredients'     => 'nullable|string',
             // 'category_id'     => 'required|exists:categories,id',
             'category_id' => 'required|string',
             'preparation_time' => 'required',

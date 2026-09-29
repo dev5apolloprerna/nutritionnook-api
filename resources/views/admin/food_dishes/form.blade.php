@@ -82,26 +82,24 @@
                     {{-- Preparation Time --}}
                     <div class="form-group col-md-6">
                         <label>Preparation Time</label>
-                        <div class="d-flex gap-2">
-                            <select name="prep_minutes" class="form-select">
-                                <option value="">Minutes</option>
-                                @for ($i = 0; $i <= 120; $i++)
-                                    <option value="{{ $i }}" {{ old('prep_minutes', $prep_minutes ?? '') == $i ? 'selected' : '' }}>{{ $i }} min</option>
-                                @endfor
-                            </select>
-                    
-                            <select name="prep_seconds" class="form-select">
-                                <option value="">Seconds</option>
-                                @for ($i = 0; $i < 60; $i+=5)
-                                    <option value="{{ $i }}" {{ old('prep_seconds', $prep_seconds ?? '') == $i ? 'selected' : '' }}>{{ $i }} sec</option>
-                                @endfor
-                            </select>
-                        </div>
+                        <select name="prep_minutes"
+                            class="form-select form-control @error('prep_minutes') is-invalid @enderror">
+                            <option value="">Select preparation time</option>
+                            @for ($minutes = 15; $minutes <= 120; $minutes += 15)
+                                <option value="{{ $minutes }}"
+                                    {{ old('prep_minutes', $prep_minutes ?? '') == $minutes ? 'selected' : '' }}>
+                                    {{ $minutes }} minutes
+                                </option>
+                            @endfor
+                        </select>
+                        @error('prep_minutes')
+                            <div class="text-danger mt-1">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     {{-- Description --}}
                     <div class="form-group col-md-6">
-                        <label>Description<span class="text-danger">*</span></label>
+                        <label>Description <span class="text-muted">(Optional)</span></label>
                         <textarea name="description" placeholder="Enter Food Dishe Description" class="form-control">{{ old('description', $dish->description ?? '') }}</textarea>
                         @error('description')
                             <div class="text-danger mt-1">{{ $message }}</div>
@@ -123,7 +121,7 @@
 
                     {{-- Dish Ingredients --}}
                     <div class="form-group col-md-6">
-                        <label>Dish Ingredients</label>
+                        <label>Dish Ingredients <span class="text-muted">(Optional)</span></label>
                         <input type="text" name="ingredients" class="form-control"
                             value="{{ old('ingredients', $dish->ingredients ?? '') }}" placeholder="Enter ingredients (comma separated)">
                     </div>

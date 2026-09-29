@@ -34,9 +34,11 @@ class FoodDishController extends Controller
             'spicy_level'       => 'nullable|integer|between:1,5',
             'quantity'          => 'required|numeric',
             'unit'              => 'required|string',
-            'prep_minutes'      => 'nullable|integer',
-            'prep_seconds'      => 'nullable|integer',
-            'description'       => 'required|string',
+            // 'prep_minutes'      => 'nullable|integer',
+            // 'prep_seconds'      => 'nullable|integer',
+            // 'description'       => 'required|string',
+            'prep_minutes'      => 'nullable|integer|between:15,120|multiple_of:15',
+            'description'       => 'nullable|string',
             'images'            => 'required|array|min:1',
             'images.*'          => 'image|mimes:jpeg,png,jpg,gif,webp',
             // 'is_active'         => 'boolean',
@@ -70,12 +72,10 @@ class FoodDishController extends Controller
         // ✅ Quantity + Unit combine
         $data['weight_option_id'] = $request->quantity . $request->unit;
         $data['spicy_level'] = $request->spicy_level == null ? 0 : $request->spicy_level;
-        // ✅ Preparation time (e.g. 15min 30sec)
-        if ($request->prep_minutes || $request->prep_seconds) {
-            $min = $request->prep_minutes ? $request->prep_minutes . "min" : "";
-            $sec = $request->prep_seconds ? $request->prep_seconds . "sec" : "";
-            $data['preparation_time_id'] = trim($min . " " . $sec);
-        }
+        // ✅ Preparation time (15-minute intervals)
+        $data['preparation_time_id'] = $request->filled('prep_minutes')
+            ? $request->integer('prep_minutes') . 'min'
+            : null;
 
         // ✅ Categories (comma separated string)
         $data['category_id'] = implode(',', $request->category_id);
@@ -129,11 +129,13 @@ class FoodDishController extends Controller
         }
 
         // 🔹 Preparation time
-        $prep_minutes = $prep_seconds = null;
+        // $prep_minutes = $prep_seconds = null;
+        $prep_minutes = null;
         if ($foodDish->preparation_time_id) {
-            preg_match('/(?:(\d+)min)?\s*(?:(\d+)sec)?/', $foodDish->preparation_time_id, $matches);
+            // preg_match('/(?:(\d+)min)?\s*(?:(\d+)sec)?/', $foodDish->preparation_time_id, $matches);
+            preg_match('/(\d+)min/', $foodDish->preparation_time_id, $matches);
             $prep_minutes = $matches[1] ?? null;
-            $prep_seconds = $matches[2] ?? null;
+            // $prep_seconds = $matches[2] ?? null;
         }
 
         return view('admin.food_dishes.form', [
@@ -147,7 +149,7 @@ class FoodDishController extends Controller
             'quantity' => $quantity,
             'unit' => $unit,
             'prep_minutes' => $prep_minutes,
-            'prep_seconds' => $prep_seconds,
+            // 'prep_seconds' => $prep_seconds,
         ]);
     }
 
@@ -161,9 +163,11 @@ class FoodDishController extends Controller
             'spicy_level'       => 'nullable|integer|between:1,5',
             'quantity'          => 'required|numeric',
             'unit'              => 'required|string',
-            'prep_minutes'      => 'nullable|integer',
-            'prep_seconds'      => 'nullable|integer',
-            'description'       => 'required|string',
+            // 'prep_minutes'      => 'nullable|integer',
+            // 'prep_seconds'      => 'nullable|integer',
+            // 'description'       => 'required|string',
+            'prep_minutes'      => 'nullable|integer|between:15,120|multiple_of:15',
+            'description'       => 'nullable|string',
             'images'            => 'nullable|array',
             'images.*'          => 'image|mimes:jpeg,png,jpg,gif,webp',
             // 'is_active'         => 'boolean',
@@ -196,12 +200,10 @@ class FoodDishController extends Controller
         // ✅ Quantity + Unit
         $data['weight_option_id'] = $request->quantity . $request->unit;
         $data['spicy_level'] = $request->spicy_level == null ? 0 : $request->spicy_level;
-        // ✅ Preparation time
-        if ($request->prep_minutes || $request->prep_seconds) {
-            $min = $request->prep_minutes ? $request->prep_minutes . "min" : "";
-            $sec = $request->prep_seconds ? $request->prep_seconds . "sec" : "";
-            $data['preparation_time_id'] = trim($min . " " . $sec);
-        }
+        // ✅ Preparation time (15-minute intervals)
+        $data['preparation_time_id'] = $request->filled('prep_minutes')
+            ? $request->integer('prep_minutes') . 'min'
+            : null;
 
         // ✅ Categories
         $data['category_id'] = implode(',', $request->category_id);
