@@ -62,6 +62,33 @@ class Chef extends Authenticatable
         'working_days' => 'array',
     ];
 
+    /**
+     * Return the usable file paths stored in a document attribute.
+     *
+     * Older records may contain JSON placeholders such as `null`, `[null]`,
+     * or `[""]`. Those values do not represent uploaded documents.
+     */
+    public function documentPaths(string $attribute): array
+    {
+        $value = $this->getAttribute($attribute);
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            }
+        }
+
+        $paths = is_array($value) ? $value : [$value];
+
+        return array_values(array_filter($paths, static function ($path) {
+            return is_string($path)
+                && trim($path) !== ''
+                && strtolower(trim($path)) !== 'null';
+        }));
+    }
+
     /* ---------------- Relationships ---------------- */
 
     public function restaurantTypes()

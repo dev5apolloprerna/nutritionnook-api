@@ -2241,23 +2241,10 @@
 <div class="tab-content" id="documents">
     <h2 class="section-title">Chef Documents</h2>
     @php
-    $hasChefDocuments = collect([
-    $chef->personal_documents,
-    $chef->fscai_certificate,
-    $chef->self_declaration,
-    ])->contains(function ($value) {
-    if (is_array($value)) {
-    return !empty($value);
-    }
-
-    if (empty($value)) {
-    return false;
-    }
-
-    $decodedValue = json_decode($value, true);
-
-    return json_last_error() !== JSON_ERROR_NONE || !empty($decodedValue);
-    });
+    $personalDocs = $chef->documentPaths('personal_documents');
+    $fssaiDocs = $chef->documentPaths('fscai_certificate');
+    $selfDocs = $chef->documentPaths('self_declaration');
+    $hasChefDocuments = !empty($personalDocs) || !empty($fssaiDocs) || !empty($selfDocs);
     @endphp
 
     @if (!$hasChefDocuments)
@@ -2276,10 +2263,6 @@
             </div>
 
             <div class="doc-body">
-                @php
-                $personalDocs = json_decode($chef->personal_documents ?? '[]', true);
-                @endphp
-
                 @if (!empty($personalDocs))
                 <div class="personal-docs-row">
                     <div class="personal-docs-left">
@@ -2346,18 +2329,6 @@
             </div>
 
             <div class="doc-body">
-
-                @php
-                $decodedDocs = json_decode($chef->fscai_certificate ?? '', true);
-
-                if (is_array($decodedDocs) && !empty($decodedDocs)) {
-                $fssaiDocs = $decodedDocs;
-                } elseif (!empty($chef->fscai_certificate)) {
-                $fssaiDocs = [$chef->fscai_certificate];
-                } else {
-                $fssaiDocs = [];
-                }
-                @endphp
 
                 @if(count($fssaiDocs))
 
@@ -2472,18 +2443,6 @@
             </div>
 
             <div class="doc-body">
-
-                @php
-                $decodedDocs = json_decode($chef->self_declaration ?? '', true);
-
-                if (is_array($decodedDocs) && !empty($decodedDocs)) {
-                $selfDocs = $decodedDocs;
-                } elseif (!empty($chef->self_declaration)) {
-                $selfDocs = [$chef->self_declaration];
-                } else {
-                $selfDocs = [];
-                }
-                @endphp
 
                 @if(count($selfDocs))
 
