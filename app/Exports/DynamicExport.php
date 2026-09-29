@@ -8,6 +8,8 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle
@@ -17,20 +19,22 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
     protected $data;
     protected $headings;
     protected $sheetTitle;
+    protected $serialNumber = 0;
+
+    private const DELETED_ROW_BACKGROUND = 'FFF4CCCC';
 
     public function __construct($tableName, $columns = [], $data = null, $sheetTitle = null)
     {
         $this->tableName = $tableName;
-        // $this->columns = $columns;
-        $this->columns = $this->moveDeletedAtToEnd($columns);
+        $this->columns = $this->prepareColumns($columns);
         $this->data = $data;
         $this->sheetTitle = $sheetTitle ?: $this->formatHeading($tableName);
 
         // headings તૈયાર કરો (કોલમના નામને વધારે readable બનાવો)
-        $this->headings = array_map(function($column) {
+        $this->headings = array_merge(['Sr No'], array_map(function ($column) {
             return $this->formatHeading($column);
         // }, $columns);
-        }, $this->columns);
+        }, $this->columns));
     }
 
     public function title(): string
@@ -79,7 +83,7 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
     */
     public function map($row): array
     {
-        $mappedRow = [];
+        $mappedRow = [++$this->serialNumber];
         
         foreach ($this->columns as $column) {
             $value = $row->$column ?? '';
@@ -105,9 +109,31 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
     */
     public function styles(Worksheet $sheet)
     {
-        return [
-            1 => ['font' => ['bold' => true]],
-        ];
+        $styles = [1 => ['font' => ['bold' => true]]];
+
+        if (!in_array('deleted_at', $this->columns, true)) {
+            return $styles;
+        }
+
+        // The serial-number column shifts the exported data columns one place.
+        $deletedAtColumn = array_search('deleted_at', $this->columns, true) + 2;
+        $deletedAtColumnLetter = Coordinate::stringFromColumnIndex($deletedAtColumn);
+        $lastColumnLetter = Coordinate::stringFromColumnIndex(count($this->columns) + 1);
+
+        for ($row = 2; $row <= $sheet->getHighestDataRow(); $row++) {
+            if ($sheet->getCell("{$deletedAtColumnLetter}{$row}")->getValue() === null
+                || $sheet->getCell("{$deletedAtColumnLetter}{$row}")->getValue() === '') {
+                continue;
+            }
+
+            $sheet->getStyle("A{$row}:{$lastColumnLetter}{$row}")
+                ->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()
+                ->setARGB(self::DELETED_ROW_BACKGROUND);
+        }
+
+        return $styles;
     }
 
     /**
@@ -132,5 +158,18 @@ class DynamicExport implements FromCollection, WithHeadings, WithMapping, WithSt
             ...array_values(array_filter($columns, fn ($column) => $column !== 'deleted_at')),
             'deleted_at',
         ];
+    }
+
+     /**
+     * Use the sequential Sr No value instead of exposing database record IDs.
+     */
+    private function prepareColumns(array $columns): array
+    {
+        $columns = array_values(array_filter(
+            $columns,
+            fn ($column) => $column !== 'id'
+        ));
+
+        return $this->moveDeletedAtToEnd($columns);
     }
 }
