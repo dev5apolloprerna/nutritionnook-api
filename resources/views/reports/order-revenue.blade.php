@@ -60,7 +60,7 @@
                 <div class="col-md-3 mb-3">
                     <div class="card bg-gradient-success text-white">
                         <div class="card-body p-3">
-                            <h6 class="mb-0">Total Revenue</h6>
+                            <h6 class="mb-0">Delivered Revenue</h6>
                             <h3 class="mb-0">₹{{ number_format($totalRevenue, 2) }}</h3>
                         </div>
                     </div>
@@ -94,7 +94,7 @@
                                     <th>Status</th>
                                     <th>Order Count</th>
                                     <th>Percentage</th>
-                                    <th>Revenue</th>
+                                    <th>Earned Revenue (Delivered)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -132,7 +132,7 @@
                                 <tr>
                                     <th>Period</th>
                                     <th>Total Orders</th>
-                                    <th>Revenue</th>
+                                    <th>Delivered Revenue</th>
                                     <th>Cancelled</th>
                                     <th>Avg Order Value</th>
                                 </tr>

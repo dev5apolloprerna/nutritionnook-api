@@ -46,15 +46,20 @@ class ReportController extends Controller
         $reportType = $request->report_type ?? 'monthly';
 
         // Total Orders Report
-        $ordersQuery = Order::whereBetween('created_at', [$fromDate, $toDate]);
+        // $ordersQuery = Order::whereBetween('created_at', [$fromDate, $toDate]);
+        $deliveredOrdersQuery = (clone $ordersQuery)->where('status', 'delivered');
         
         $totalOrders = $ordersQuery->count();
-        $totalRevenue = $ordersQuery->sum('amount');
-        $totalCommission = $ordersQuery->where('is_payout_completed', 1)->sum(DB::raw('amount * 0.1')); // Assuming 10% commission
+        $totalRevenue = (clone $deliveredOrdersQuery)->sum('amount');
+        $totalCommission = (clone $deliveredOrdersQuery)->sum(DB::raw('amount * 0.1')); // Assuming 10% commission
         $totalRefunds = Order::where('is_refunded', 1)->whereBetween('refunded_at', [$fromDate, $toDate])->sum('amount');
 
         // Order Status Report
-        $orderStatusData = Order::select('status', DB::raw('count(*) as count'), DB::raw('sum(amount) as revenue'))
+        $orderStatusData = Order::select(
+                'status',
+                DB::raw('count(*) as count'),
+                DB::raw('sum(case when status = "delivered" then amount else 0 end) as revenue')
+            )
             ->whereBetween('created_at', [$fromDate, $toDate])
             ->groupBy('status')
             ->get();
@@ -70,7 +75,8 @@ class ReportController extends Controller
         $orderTrends = Order::select(
                 DB::raw("DATE_FORMAT(created_at, '$dateFormat') as period"),
                 DB::raw('count(*) as total_orders'),
-                DB::raw('sum(amount) as total_revenue'),
+                DB::raw('sum(case when status = "delivered" then 1 else 0 end) as delivered_orders'),
+                DB::raw('sum(case when status = "delivered" then amount else 0 end) as total_revenue'),
                 DB::raw('sum(case when status = "cancelled" then 1 else 0 end) as cancelled_orders')
             )
             ->whereBetween('created_at', [$fromDate, $toDate])
@@ -166,7 +172,8 @@ class ReportController extends Controller
             ->leftJoin('orders', function($join) use ($fromDate, $toDate) {
                 $join->on('users.id', '=', 'orders.user_id')
                      ->whereBetween('orders.created_at', [$fromDate, $toDate])
-                     ->where('orders.payment_status', 'received');
+                     ->where('orders.payment_status', 'received')
+                     ->where('orders.status', 'delivered');
             })
             ->where('users.user_role', 5)
             ->where('users.is_delete', 0)
@@ -298,8 +305,8 @@ class ReportController extends Controller
             'inactive_customers' => $inactiveCustomers,
             'customers_with_orders' => $customersWithOrders->count(),
             'total_revenue' => $topCustomers->sum('total_spent'),
-            'average_revenue_per_customer' => $customersWithOrders->count() > 0 
-                ? round($topCustomers->sum('total_spent') / $customersWithOrders->count(), 2) 
+            'average_revenue_per_customer' => $topCustomers->count() > 0
+                ? round($topCustomers->sum('total_spent') / $topCustomers->count(), 2)
                 : 0
         ];
 
@@ -350,22 +357,23 @@ class ReportController extends Controller
                 'chefs.business_name',
                 'chefs.email',
                 'chefs.phone_number',
+                'chefs.commission',
                 DB::raw('COUNT(orders.id) as total_orders'),
-                DB::raw('SUM(orders.amount) as gross_earnings'),
-                DB::raw('SUM(orders.amount * chefs.commission / 100) as commission_amount'),
-                DB::raw('SUM(orders.amount * (100 - chefs.commission) / 100) as net_earnings'),
-                DB::raw('AVG(ratings.rating) as avg_rating')
+                DB::raw('COALESCE(SUM(orders.amount), 0) as gross_earnings'),
+                DB::raw('COALESCE(SUM(orders.amount * COALESCE(chefs.commission, 10) / 100), 0) as commission_amount'),
+                DB::raw('COALESCE(SUM(orders.amount * (100 - COALESCE(chefs.commission, 10)) / 100), 0) as net_earnings')
             )
             ->leftJoin('orders', function($join) use ($fromDate, $toDate) {
                 $join->on('chefs.id', '=', 'orders.chef_id')
                      ->whereBetween('orders.created_at', [$fromDate, $toDate])
-                     ->where('orders.payment_status', 'received');
+                     ->where('orders.payment_status', 'received')
+                     ->where('orders.status', 'delivered');
             })
-            ->leftJoin('ratings', 'chefs.id', '=', 'ratings.chef_id')
+            ->withAvg('ratings as avg_rating', 'rating')
             ->when($request->chef_id, function($query) use ($request) {
                 return $query->where('chefs.id', $request->chef_id);
             })
-            ->groupBy('chefs.id', 'chefs.name', 'chefs.business_name', 'chefs.email', 'chefs.phone_number')
+            ->groupBy('chefs.id', 'chefs.name', 'chefs.business_name', 'chefs.email', 'chefs.phone_number', 'chefs.commission')
             ->orderByDesc('gross_earnings')
             ->get();
 
@@ -399,6 +407,7 @@ class ReportController extends Controller
             ->join('chefs', 'food_dishes.chef_id', '=', 'chefs.id')
             ->join('orders', DB::raw('JSON_CONTAINS(orders.items, JSON_OBJECT("id", food_dishes.id))'), '=', DB::raw('1'))
             ->whereBetween('orders.created_at', [$fromDate, $toDate])
+            ->where('orders.status', 'delivered') 
             ->groupBy('food_dishes.id', 'food_dishes.name', 'chefs.name', 'food_dishes.price')
             ->orderByDesc('order_count')
             ->limit(20)
@@ -434,34 +443,6 @@ class ReportController extends Controller
         ));
     }
 
-
-
-// $chefEarnings = Chef::select(
-//         'chefs.id',
-//         'chefs.name',
-//         'chefs.business_name',
-//         'chefs.email',
-//         'chefs.phone_number',
-//         'chefs.commission',
-//         DB::raw('COUNT(orders.id) as total_orders'),
-//         DB::raw('COALESCE(SUM(orders.amount), 0) as gross_earnings'),
-//         DB::raw('COALESCE(SUM(orders.amount * IFNULL(chefs.commission, 10) / 100), 0) as commission_amount'),
-//         DB::raw('COALESCE(SUM(orders.amount * (100 - IFNULL(chefs.commission, 10)) / 100), 0) as net_earnings'),
-//         DB::raw('COALESCE(AVG(ratings.rating), 0) as avg_rating')
-//     )
-//     ->leftJoin('orders', function($join) use ($fromDate, $toDate) {
-//         $join->on('chefs.id', '=', 'orders.chef_id')
-//              ->whereBetween('orders.created_at', [$fromDate, $toDate])
-//              ->where('orders.payment_status', 'received');
-//     })
-//     ->leftJoin('ratings', 'chefs.id', '=', 'ratings.chef_id')
-//     ->when($request->chef_id, function($query) use ($request) {
-//         return $query->where('chefs.id', $request->chef_id);
-//     })
-//     ->groupBy('chefs.id', 'chefs.name', 'chefs.business_name', 'chefs.email', 'chefs.phone_number', 'chefs.commission')
-//     ->orderByDesc('gross_earnings')
-//     ->get();
-
     /**
      * 3. Customer Insights Reports
      */
@@ -489,6 +470,7 @@ class ReportController extends Controller
             )
             ->join('food_dishes', 'cuisine_type.id', '=', 'food_dishes.cuisine_type_id')
             ->join('orders', DB::raw('JSON_CONTAINS(orders.items, JSON_OBJECT("id", food_dishes.id))'), '=', DB::raw('1'))
+            ->where('orders.status', 'delivered')
             ->whereBetween('orders.created_at', [$fromDate, $toDate])
             ->groupBy('cuisine_type.id', 'cuisine_type.title')
             ->orderByDesc('order_count')
@@ -508,6 +490,7 @@ class ReportController extends Controller
             ->join('cuisine_type', 'food_dishes.cuisine_type_id', '=', 'cuisine_type.id')
             ->join('orders', DB::raw('JSON_CONTAINS(orders.items, JSON_OBJECT("id", food_dishes.id))'), '=', DB::raw('1'))
             ->whereBetween('orders.created_at', [$fromDate, $toDate])
+            ->where('orders.status', 'delivered')
             ->groupBy('food_dishes.id', 'food_dishes.name', 'chefs.name', 'cuisine_type.title', 'food_dishes.price')
             ->orderByDesc('order_count')
             ->limit(30)
@@ -563,7 +546,8 @@ class ReportController extends Controller
         $ordersTrend = Order::select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(*) as order_count'),
-                DB::raw('SUM(amount) as revenue')
+                DB::raw('SUM(CASE WHEN status = "delivered" THEN 1 ELSE 0 END) as delivered_order_count'),
+                DB::raw('SUM(CASE WHEN status = "delivered" THEN amount ELSE 0 END) as revenue')
             )
             ->whereBetween('created_at', [$fromDate, $toDate])
             ->groupBy(DB::raw('DATE(created_at)'))
@@ -574,7 +558,8 @@ class ReportController extends Controller
         $peakHours = Order::select(
                 DB::raw('HOUR(created_at) as hour'),
                 DB::raw('COUNT(*) as order_count'),
-                DB::raw('SUM(amount) as revenue')
+                DB::raw('SUM(CASE WHEN status = "delivered" THEN 1 ELSE 0 END) as delivered_order_count'),
+                DB::raw('SUM(CASE WHEN status = "delivered" THEN amount ELSE 0 END) as revenue')
             )
             ->whereBetween('created_at', [$fromDate, $toDate])
             ->groupBy(DB::raw('HOUR(created_at)'))
@@ -613,7 +598,7 @@ class ReportController extends Controller
     private function exportOrderRevenueExcel($orderTrends, $orderStatusData, $fromDate, $toDate)
     {
         $sheets = [
-            new DynamicExport('order_trends', ['period', 'total_orders', 'total_revenue', 'cancelled_orders'], $orderTrends, 'Order Trends'),
+            new DynamicExport('order_trends', ['period', 'total_orders', 'delivered_orders', 'total_revenue', 'cancelled_orders'], $orderTrends, 'Order Trends'),
             new DynamicExport('order_status', ['status', 'count', 'revenue'], $orderStatusData, 'Order Status'),
         ];
 
@@ -680,8 +665,8 @@ class ReportController extends Controller
     private function exportPlatformHealthExcel($ordersTrend, $peakHours, $couponUsage, $fromDate, $toDate)
     {
         $sheets = [
-            new DynamicExport('orders_trend', ['date', 'order_count', 'revenue'], $ordersTrend, 'Orders Trend'),
-            new DynamicExport('peak_hours', ['hour', 'order_count', 'revenue'], $peakHours, 'Peak Hours'),
+            new DynamicExport('orders_trend', ['date', 'order_count', 'delivered_order_count', 'revenue'], $ordersTrend, 'Orders Trend'),
+            new DynamicExport('peak_hours', ['hour', 'order_count', 'delivered_order_count', 'revenue'], $peakHours, 'Peak Hours'),
             new DynamicExport('coupon_usage', ['id', 'code', 'type', 'value', 'usage_count', 'total_discount', 'unique_users'], $couponUsage, 'Coupon Usage'),
         ];
 

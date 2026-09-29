@@ -62,9 +62,9 @@
                                     <th>Chef Name</th>
                                     <th>Business Name</th>
                                     <th>Phone</th>
-                                    <th>Total Orders</th>
-                                    <th>Gross Earnings</th>
-                                    <th>Commission ({{ $chefEarnings->first()->commission ?? 10 }}%)</th>
+                                    <th>Delivered Orders</th>
+                                    <th>Gross Earnings (Delivered)</th>
+                                    <th>Commission</th>
                                     <th>Net Earnings</th>
                                     <th>Avg Rating</th>
                                 </tr>

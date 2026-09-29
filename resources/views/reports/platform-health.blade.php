@@ -111,7 +111,7 @@
                                     <td>{{ date('d M Y', strtotime($trend->date)) }}</td>
                                     <td>{{ $trend->order_count }}</td>
                                     <td>₹{{ number_format($trend->revenue, 2) }}</td>
-                                    <td>₹{{ number_format($trend->order_count > 0 ? $trend->revenue / $trend->order_count : 0, 2) }}</td>
+                                    <td>₹{{ number_format($trend->delivered_order_count > 0 ? $trend->revenue / $trend->delivered_order_count : 0, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
