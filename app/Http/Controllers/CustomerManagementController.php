@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -41,5 +42,15 @@ class CustomerManagementController extends Controller
         return view('admin.customers.show', compact('user', 'addresses'));
     }
 
+    public function orderDetails($id)
+    {
+        $user = User::findOrFail($id);
+        $orders = Order::with('chef')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return view('admin.customers.orders', compact('user', 'orders'));
+    }
 
 }

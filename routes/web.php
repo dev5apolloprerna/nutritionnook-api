@@ -953,6 +953,7 @@ Route::prefix('allergies')->name('allergies.')->group(function () {
     Route::resource('users', UsersController::class);
 
     Route::get('/customers', [CustomerManagementController::class, 'index'])->name('customers.index');
+    Route::get('/customers/{id}/orders', [CustomerManagementController::class, 'orderDetails'])->name('customers.orders');
     Route::get('/customers/{id}', [CustomerManagementController::class, 'show'])->name('customers.show');
     Route::delete('/customers/{id}', [CustomerManagementController::class, 'destroy'])->name('customers.destroy');
 

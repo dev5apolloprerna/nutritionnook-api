@@ -29,6 +29,7 @@
                                 <th>Email</th>
                                 <th>Phone Number</th>
                                 <th>Status</th>
+                                <th>Order Details</th>
                                 @if (
                                     (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
                                         \App\Helpers\CommonHelper::getPermission('Customer Management', 'delete'))
@@ -44,11 +45,17 @@
                                     <td>{{ $user->name }}</td>
                                     <td>{{ $user->email }}</td>
                                     <td>{{ $user->phone_number }}</td>
-                                     <td>
+                                    <td>
                                         <label
                                             class="badge {{ $user->status == 'active' ? 'badge-success' : 'badge-danger' }}">
                                             {{ ucfirst($user->status) }}
                                         </label>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('customers.orders', $user->id) }}"
+                                            class="btn btn-sm btn-outline-primary" title="View customer orders">
+                                            <i class="fas fa-clipboard-list"></i> Orders
+                                        </a>
                                     </td>
                                     @if (
                                         (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
@@ -77,7 +84,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center">No customer found.</td>
+                                    <td colspan="7" class="text-center">No customer found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
