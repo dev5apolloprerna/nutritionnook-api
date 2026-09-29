@@ -46,7 +46,7 @@ class ReportController extends Controller
         $reportType = $request->report_type ?? 'monthly';
 
         // Total Orders Report
-        // $ordersQuery = Order::whereBetween('created_at', [$fromDate, $toDate]);
+        $ordersQuery = Order::whereBetween('created_at', [$fromDate, $toDate]);
         $deliveredOrdersQuery = (clone $ordersQuery)->where('status', 'delivered');
         
         $totalOrders = $ordersQuery->count();
