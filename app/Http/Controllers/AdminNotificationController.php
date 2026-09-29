@@ -157,8 +157,11 @@ class AdminNotificationController extends Controller
 
     public function history()
     {
-        $notifications = AdminNotification::orderBy('created_at', 'desc')
-            ->paginate(20);
+        $notifications = AdminNotification::with('sender')
+            ->latest('created_at')
+            ->latest('id')
+            ->paginate(20)
+            ->withQueryString();
 
         return view('admin.notifications.history', compact('notifications'));
     }

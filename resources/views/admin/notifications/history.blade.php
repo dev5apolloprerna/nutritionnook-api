@@ -44,6 +44,36 @@
     .nn-stat-sent { background: #e8f5e9; color: #2e7d32; }
     .nn-stat-fail { background: #fce4ec; color: #c62828; }
     .nn-stat-total { background: #e3f2fd; color: #1565c0; }
+    .nn-pagination-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-top: 22px;
+        padding-top: 18px;
+        border-top: 1px solid #e8eaff;
+    }
+    .nn-pagination-info { color: #777; font-size: 0.85rem; }
+    .nn-pagination nav { margin: 0; }
+    .nn-pagination .pagination { margin: 0; gap: 5px; }
+    .nn-pagination .page-link {
+        min-width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #D0D5FF;
+        border-radius: 8px !important;
+        color: #4c56d7;
+        font-weight: 600;
+        box-shadow: none;
+    }
+    .nn-pagination .page-link:hover { background: #F0F1FF; border-color: #6B73FF; }
+    .nn-pagination .page-item.active .page-link { background: #6B73FF; border-color: #6B73FF; color: #fff; }
+    .nn-pagination .page-item.disabled .page-link { background: #f7f7f7; color: #aaa; border-color: #eee; }
+    @media (max-width: 576px) {
+        .nn-pagination-wrap { flex-direction: column; }
+    }
 </style>
 
 <div class="nn-notif-page">
@@ -104,9 +134,17 @@
             </div>
         @endforeach
 
-        <div class="d-flex justify-content-center mt-3">
-            {{ $notifications->links() }}
-        </div>
+        @if($notifications->hasPages())
+            <div class="nn-pagination-wrap">
+                <div class="nn-pagination-info">
+                    Showing {{ $notifications->firstItem() }}–{{ $notifications->lastItem() }}
+                    of {{ $notifications->total() }} notifications
+                </div>
+                <div class="nn-pagination">
+                    {{ $notifications->onEachSide(1)->links('pagination::bootstrap-4') }}
+                </div>
+            </div>
+        @endif
     @endif
 </div>
 
