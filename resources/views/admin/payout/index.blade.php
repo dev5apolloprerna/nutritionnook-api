@@ -2,16 +2,82 @@
 @section('content')
 
 <style>
-    .nn-payout-header { background: linear-gradient(135deg, #FF8C00, #FFA500); border-radius: 0 0 20px 20px; padding: 20px 25px; color: #fff; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .nn-pcard { background: #FFF8F0; border: 1px solid #FFE0B2; border-radius: 14px; padding: 22px; height: 100%; }
-    .nn-summary-stat { text-align: center; padding: 14px; background: #fff; border-radius: 10px; border: 1px solid #FFE0B2; }
-    .nn-summary-stat .stat-num { font-size: 1.4rem; font-weight: 800; color: #FF8C00; }
-    .nn-summary-stat .stat-lbl { font-size: 0.75rem; color: #999; text-transform: uppercase; }
-    .nn-chef-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-    .nn-chef-table th { background: #FFF0E0; padding: 12px; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #FFE0B2; }
-    .nn-chef-table td { padding: 12px; border-bottom: 1px solid #FFF0E0; font-size: 0.85rem; }
-    .nn-fee-tag { display: block; font-size: 0.7rem; color: #999; text-transform: none; font-weight: normal; margin-top: 4px; }
-    .nn-btn-pay-single { color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .nn-payout-header {
+        background: linear-gradient(135deg, #FF8C00, #FFA500);
+        border-radius: 0 0 20px 20px;
+        padding: 20px 25px;
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .nn-pcard {
+        background: #FFF8F0;
+        border: 1px solid #FFE0B2;
+        border-radius: 14px;
+        padding: 22px;
+        height: 100%;
+    }
+
+    .nn-summary-stat {
+        text-align: center;
+        padding: 14px;
+        background: #fff;
+        border-radius: 10px;
+        border: 1px solid #FFE0B2;
+    }
+
+    .nn-summary-stat .stat-num {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #FF8C00;
+    }
+
+    .nn-summary-stat .stat-lbl {
+        font-size: 0.75rem;
+        color: #999;
+        text-transform: uppercase;
+    }
+
+    .nn-chef-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .nn-chef-table th {
+        background: #FFF0E0;
+        padding: 12px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #FFE0B2;
+    }
+
+    .nn-chef-table td {
+        padding: 12px;
+        border-bottom: 1px solid #FFF0E0;
+        font-size: 0.85rem;
+    }
+
+    .nn-fee-tag {
+        display: block;
+        font-size: 0.7rem;
+        color: #999;
+        text-transform: none;
+        font-weight: normal;
+        margin-top: 4px;
+    }
+
+    .nn-btn-pay-single {
+        color: #fff;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
 </style>
 
 <div class="nn-payout-page">
@@ -64,6 +130,7 @@
                                     Dish Price (100%)
                                     <span class="nn-fee-tag">(Base price from menu)</span>
                                 </th>
+                                <th>Unpaid Orders</th>
                                 <th>
                                     Security (10%)
                                     <span class="nn-fee-tag">(Held for platform security)</span>
@@ -84,6 +151,7 @@
                                 </td>
                                 <td><span class="badge badge-info">{{ $summary['commission_rate'] }}%</span></td>
                                 <td>₹{{ number_format($summary['dish_price'], 2) }}</td>
+                                <td>{{ $summary['unpaid_orders'] }}</td>
                                 <td style="color: #dc3545;">- ₹{{ number_format($summary['security_deposit'], 2) }}</td>
                                 <td style="background: #f9fff9; border-left: 3px solid #28a745;">
                                     <strong style="color: #28a745; font-size: 1.1rem;">
@@ -91,25 +159,14 @@
                                     </strong>
                                 </td>
                                 <td>
-                                    @php
-                                        $payoutRecord = \DB::table('payouts')->where('chef_id', $summary['id'])->first();
-                                        $isAlreadyPaid = ($payoutRecord && in_array($payoutRecord->status, ['completed', 'paid', 'success']));
-                                    @endphp
-
-                                    @if($isAlreadyPaid)
-                                        <div style="text-align: center;">
-                                            <span class="badge" style="background-color: #28a745; color: white; padding: 8px 15px; border-radius: 5px; font-weight: bold;">
-                                                <i class="fa fa-check-circle"></i> PAID
-                                            </span>
-                                        </div>
-                                    @elseif($summary['has_bank_details'])
-                                        <button type="button" class="nn-btn-pay-single"
-                                                style="background-color: #007bff;"
-                                                data-toggle="modal" data-target="#payoutModal{{ $summary['id'] }}">
-                                            Mark Paid
-                                        </button>
+                                    @if($summary['has_bank_details'])
+                                    <button type="button" class="nn-btn-pay-single"
+                                        style="background-color: #007bff;"
+                                        data-toggle="modal" data-target="#payoutModal{{ $summary['id'] }}">
+                                        Mark Paid
+                                    </button>
                                     @else
-                                        <span class="badge badge-danger">Missing Info</span>
+                                    <span class="badge badge-danger">Missing Info</span>
                                     @endif
                                 </td>
                             </tr>
@@ -141,7 +198,9 @@
                                                         <input type="text" class="form-control" value="{{ $summary['account_number'] ?? 'N/A' }}" readonly style="background: #f8f9fa;">
                                                     </div>
 
-                                                    <div class="col-12"><hr></div>
+                                                    <div class="col-12">
+                                                        <hr>
+                                                    </div>
 
                                                     <div class="col-md-12 mb-3">
                                                         <label style="font-weight: bold;">Transfer Method <span class="text-danger">*</span></label>
@@ -169,6 +228,13 @@
                                 </div>
                             </div>
                             @endforeach
+                            @if(empty($chefSummaries))
+                            <tr>
+                                <td colspan="7" class="text-center text-muted" style="padding: 32px;">
+                                    No chefs have unpaid orders eligible for this payout cycle.
+                                </td>
+                            </tr>
+                            @endif
                         </tbody>
                     </table>
                 </div>

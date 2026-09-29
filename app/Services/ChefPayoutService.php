@@ -28,12 +28,8 @@ class ChefPayoutService
 
     public function runBulkPayout(): array
     {
-        $chefs = Chef::where(function ($q) {
-            $q->where('is_delete', 0)->orWhereNull('is_delete');
-        })
-            ->get();
-
         $now = Carbon::now();
+        $chefs = $this->eligibleChefs($now);
         $results = ['processed' => 0, 'skipped' => 0, 'failed' => 0, 'details' => []];
 
         foreach ($chefs as $chef) {
@@ -98,9 +94,32 @@ class ChefPayoutService
 
         return Order::where('chef_id', $chefId)
             ->where('status', 'delivered')
-            ->where('is_payout_completed', 0)
+            ->where(function ($query) {
+                $query->where('is_payout_completed', 0)
+                    ->orWhereNull('is_payout_completed');
+            })
             ->whereDate('date', '<=', $cutoff->toDateString())
             ->get();
+    }
+
+    /**
+     * Return only active chefs who have at least one unpaid order in the
+     * current payout cycle. Older records with a null payout flag are unpaid.
+     */
+    public function eligibleChefs(?Carbon $asOf = null)
+    {
+        $cutoff = self::payoutOrderCutoff($asOf ?? Carbon::now());
+
+        return Chef::where(function ($query) {
+            $query->where('is_delete', 0)->orWhereNull('is_delete');
+        })->whereHas('orders', function ($query) use ($cutoff) {
+            $query->where('status', 'delivered')
+                ->where(function ($payoutQuery) {
+                    $payoutQuery->where('is_payout_completed', 0)
+                        ->orWhereNull('is_payout_completed');
+                })
+                ->whereDate('date', '<=', $cutoff->toDateString());
+        })->orderBy('name')->get();
     }
 
     /**

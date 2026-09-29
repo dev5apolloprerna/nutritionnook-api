@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
- use App\Services\FCMService;
+use App\Services\FCMService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -22,120 +22,119 @@ class PayoutController extends Controller
     {
         $this->payoutService = $payoutService;
     }
-    
-   
-public function markPaid(Request $request, $chef_id)
-{
-    // ૧. પોપઅપના ડેટાનું વેલિડેશન
-    $request->validate([
-        'payment_method' => 'required',
-        'transaction_id' => 'required',
-        'payout_amount'  => 'nullable|numeric|min:0',
-    ]);
 
-    DB::beginTransaction();
-    try {
-        $chef = Chef::findOrFail($chef_id);
-        $commRate = $chef->commission ?? 0;
 
-        $unpaidOrders = $this->payoutService->eligibleUnpaidOrders($chef_id);
-
-        if ($unpaidOrders->isEmpty()) {
-            return redirect()->back()->with('error', 'No pending orders found.');
-        }
-
-        $orderCount = $unpaidOrders->count();
-
-        // Single source of truth (every item + quantity, 90/10 split).
-        $breakdown = CommonHelper::chefPayoutBreakdown($unpaidOrders, $commRate);
-        $totalDishPrice = $breakdown['dish_total'];
-        $totalSecurity  = $breakdown['security'];
-        $totalNetPayout = $breakdown['net_payout'];
-
-        // Admin can override the computed net payout (e.g. rounding/bank adjustments); falls back to computed value.
-        $finalPayoutAmount = $request->filled('payout_amount') ? (float) $request->payout_amount : $totalNetPayout;
-
-        // ૨. Payout રેકોર્ડ બનાવો (નવી કોલમ સાથે) — same table + status the automated Razorpay payout uses,
-        // so this chef isn't picked up again by the next auto-payout run for these same orders.
-        $payout = Payout::create([
-            'chef_id'           => $chef_id,
-            'total_earning'     => $totalDishPrice,
-            'commission_amount' => $totalSecurity,
-            'payout_amount'     => $finalPayoutAmount,
-            'order_count'       => $orderCount,
-            'status'            => 'completed',
-            'payment_method'    => $request->payment_method,
-            'transaction_id'    => $request->transaction_id,
-            'payout_month'      => now()->month,
-            'payout_year'       => now()->year,
+    public function markPaid(Request $request, $chef_id)
+    {
+        // ૧. પોપઅપના ડેટાનું વેલિડેશન
+        $request->validate([
+            'payment_method' => 'required',
+            'transaction_id' => 'required',
+            'payout_amount'  => 'nullable|numeric|min:0',
         ]);
 
-        // Link + close out every order this payout covers (same as the automated payout flow).
-        Order::whereIn('id', $unpaidOrders->pluck('id'))->update([
-            'is_payout_completed' => 1,
-            'payout_id'           => $payout->id,
-        ]);
-
-        DB::commit();
-
-        // 🔥 નોટિફિકેશન અને ઈમેલ લોજિક
+        DB::beginTransaction();
         try {
-            $monthName = now()->format('F Y');
-            $setting = DB::table('settings')->first();
-            $logo = ($setting && $setting->logo) ? url('public/images/' . $setting->logo) : '';
+            $chef = Chef::findOrFail($chef_id);
+            $commRate = $chef->commission ?? 0;
 
-            $notifyTitle = 'Payout Received! 💰';
-            // મેસેજમાં ટ્રાન્ઝેક્શન આઈડી પણ બતાવી શકાય
-            $notifyBody  = "₹" . number_format($totalNetPayout, 2) . " has been credited via {$request->payment_method}. Ref: {$request->transaction_id}";
+            $unpaidOrders = $this->payoutService->eligibleUnpaidOrders($chef_id);
 
-            $notifyData = [
-                'title'          => $notifyTitle,
-                'body'           => $notifyBody,
-                'type'           => 'payout_success',
-                'payout_id'      => (string) $payout->id,
-                'amount'         => (string) $totalNetPayout,
-                'payment_method' => $request->payment_method, // NEW: Push માં મોકલ્યું
-                'transaction_id' => $request->transaction_id, // NEW: Push માં મોકલ્યું
-                'month'          => $monthName,
-                'order_count'    => (string) $orderCount,
-                'logo'           => $logo,
-            ];
-
-            // 1. FCM નોટિફિકેશન
-            (new FCMService())->sendNotificationToUser(
-                $chef_id,
-                $notifyTitle,
-                $notifyBody,
-                $notifyData
-            );
-
-            // 2. ઈમેલ (વિગતો સાથે)
-            if ($chef->email) {
-                Mail::send('emails.payout-success', [
-                    'name'           => $chef->name,
-                    'amount'         => number_format($totalNetPayout, 2),
-                    'method'         => $request->payment_method,
-                    'transaction_id' => $request->transaction_id,
-                    'month'          => $monthName,
-                    'orderCount'     => $orderCount
-                ], function ($message) use ($chef, $monthName) {
-                    $message->to($chef->email)
-                            ->subject("Payout Received: {$monthName} 💰");
-                });
+            if ($unpaidOrders->isEmpty()) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'No pending orders found.');
             }
 
-        } catch (\Throwable $e) {
-            Log::error("Notification Error: " . $e->getMessage());
+            $orderCount = $unpaidOrders->count();
+
+            // Single source of truth (every item + quantity, 90/10 split).
+            $breakdown = CommonHelper::chefPayoutBreakdown($unpaidOrders, $commRate);
+            $totalDishPrice = $breakdown['dish_total'];
+            $totalSecurity  = $breakdown['security'];
+            $totalNetPayout = $breakdown['net_payout'];
+
+            // Admin can override the computed net payout (e.g. rounding/bank adjustments); falls back to computed value.
+            $finalPayoutAmount = $request->filled('payout_amount') ? (float) $request->payout_amount : $totalNetPayout;
+
+            // ૨. Payout રેકોર્ડ બનાવો (નવી કોલમ સાથે) — same table + status the automated Razorpay payout uses,
+            // so this chef isn't picked up again by the next auto-payout run for these same orders.
+            $payout = Payout::create([
+                'chef_id'           => $chef_id,
+                'total_earning'     => $totalDishPrice,
+                'commission_amount' => $totalSecurity,
+                'payout_amount'     => $finalPayoutAmount,
+                'order_count'       => $orderCount,
+                'status'            => 'completed',
+                'payment_method'    => $request->payment_method,
+                'transaction_id'    => $request->transaction_id,
+                'payout_month'      => now()->month,
+                'payout_year'       => now()->year,
+            ]);
+
+            // Link + close out every order this payout covers (same as the automated payout flow).
+            Order::whereIn('id', $unpaidOrders->pluck('id'))->update([
+                'is_payout_completed' => 1,
+                'payout_id'           => $payout->id,
+            ]);
+
+            DB::commit();
+
+            // 🔥 નોટિફિકેશન અને ઈમેલ લોજિક
+            try {
+                $monthName = now()->format('F Y');
+                $setting = DB::table('settings')->first();
+                $logo = ($setting && $setting->logo) ? url('public/images/' . $setting->logo) : '';
+
+                $notifyTitle = 'Payout Received! 💰';
+                // મેસેજમાં ટ્રાન્ઝેક્શન આઈડી પણ બતાવી શકાય
+                $notifyBody  = "₹" . number_format($finalPayoutAmount, 2) . " has been credited via {$request->payment_method}. Ref: {$request->transaction_id}";
+
+                $notifyData = [
+                    'title'          => $notifyTitle,
+                    'body'           => $notifyBody,
+                    'type'           => 'payout_success',
+                    'payout_id'      => (string) $payout->id,
+                    'amount'         => (string) $finalPayoutAmount,
+                    'payment_method' => $request->payment_method, // NEW: Push માં મોકલ્યું
+                    'transaction_id' => $request->transaction_id, // NEW: Push માં મોકલ્યું
+                    'month'          => $monthName,
+                    'order_count'    => (string) $orderCount,
+                    'logo'           => $logo,
+                ];
+
+                // 1. FCM નોટિફિકેશન
+                (new FCMService())->sendNotificationToUser(
+                    $chef_id,
+                    $notifyTitle,
+                    $notifyBody,
+                    $notifyData
+                );
+
+                // 2. ઈમેલ (વિગતો સાથે)
+                if ($chef->email) {
+                    Mail::send('emails.payout-success', [
+                        'name'           => $chef->name,
+                        'amount'         => number_format($finalPayoutAmount, 2),
+                        'method'         => $request->payment_method,
+                        'transaction_id' => $request->transaction_id,
+                        'month'          => $monthName,
+                        'orderCount'     => $orderCount
+                    ], function ($message) use ($chef, $monthName) {
+                        $message->to($chef->email)
+                            ->subject("Payout Received: {$monthName} 💰");
+                    });
+                }
+            } catch (\Throwable $e) {
+                Log::error("Notification Error: " . $e->getMessage());
+            }
+
+            return redirect()->back()->with('success', 'Payment marked as paid and notification sent!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Payout Failed: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Something went wrong while processing payout.');
         }
-
-        return redirect()->back()->with('success', 'Payment marked as paid and notification sent!');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("Payout Failed: " . $e->getMessage());
-        return redirect()->back()->with('error', 'Something went wrong while processing payout.');
     }
-}
 
     public function index(Request $request)
     {
@@ -163,24 +162,23 @@ public function markPaid(Request $request, $chef_id)
     }
 
     public function create()
-{
-    $chefs = Chef::where(function ($q) {
-        $q->where('is_delete', 0)->orWhereNull('is_delete');
-    })->get();
+    {
+        // The payout screen is a work queue: show only chefs with delivered,
+        // unpaid orders that have matured in the current payout cycle.
+        $chefs = $this->payoutService->eligibleChefs();
 
-    $chefSummaries = [];
-    foreach ($chefs as $chef) {
-        $commRate = $chef->commission ?? 0; // દા.ત. 29%
+        $chefSummaries = [];
+        foreach ($chefs as $chef) {
+            $commRate = $chef->commission ?? 0; // દા.ત. 29%
 
-        $unpaidOrders = $this->payoutService->eligibleUnpaidOrders($chef->id);
+            $unpaidOrders = $this->payoutService->eligibleUnpaidOrders($chef->id);
 
-        // Single source of truth (every item + quantity, 90/10 split).
-        $breakdown = CommonHelper::chefPayoutBreakdown($unpaidOrders, $commRate);
-        $totalDishPrice    = $breakdown['dish_total'];
-        $totalSecurityHeld = $breakdown['security'];
-        $totalNetPayout    = $breakdown['net_payout'];
+            // Single source of truth (every item + quantity, 90/10 split).
+            $breakdown = CommonHelper::chefPayoutBreakdown($unpaidOrders, $commRate);
+            $totalDishPrice    = $breakdown['dish_total'];
+            $totalSecurityHeld = $breakdown['security'];
+            $totalNetPayout    = $breakdown['net_payout'];
 
-        if ($unpaidOrders->count() > 0) {
             $chefSummaries[] = [
                 'id'                => $chef->id,
                 'name'              => $chef->name,
@@ -194,13 +192,12 @@ public function markPaid(Request $request, $chef_id)
                 'has_bank_details'  => !empty($chef->account_number) && $chef->account_number !== 'N/A',
             ];
         }
+
+        $recentPayouts = Payout::with('chef')->orderByDesc('created_at')->limit(10)->get();
+        $nextScheduledDate = Carbon::now()->addDays(7); // ટેમ્પરરી ડેટ
+
+        return view('admin.payout.index', compact('chefSummaries', 'recentPayouts', 'nextScheduledDate'));
     }
-
-    $recentPayouts = Payout::with('chef')->orderByDesc('created_at')->limit(10)->get();
-    $nextScheduledDate = Carbon::now()->addDays(7); // ટેમ્પરરી ડેટ
-
-    return view('admin.payout.index', compact('chefSummaries', 'recentPayouts', 'nextScheduledDate'));
-}
 
     public function run(Request $request)
     {
