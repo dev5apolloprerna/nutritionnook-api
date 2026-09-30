@@ -18,6 +18,11 @@ class SearchController extends Controller
         $query   = $request->input('q');
         $page    = $request->get('page', 1);
         $perPage = $request->get('per_page', 10);
+        $foodType = $request->query('food_type');
+
+        if ($request->filled('food_type') && FoodDish::normalizeFoodType($foodType) === null) {
+            return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
+        }
         // $today = strtolower(now()->format('l'));
         // 1️⃣ Logged-in user
         $user = Auth::user();
@@ -97,7 +102,8 @@ class SearchController extends Controller
             DB::table('food_dishes as d')
                 ->join('chefs as c', 'c.id', '=', 'd.chef_id')
         );
-
+        FoodDish::applyFoodTypeFilter($globalQuery, $foodType, 'd.food_type');      
+        
         $cuisine = DB::table('cuisine_type')
             ->where('title', 'like', "%$query%")
             ->first();
@@ -160,6 +166,7 @@ class SearchController extends Controller
                     'd.id as dish_id',
                     'd.name as dish_name',
                     'd.image as dish_image',
+                    'd.food_type',
                     'c.id as chef_id',
                     'c.name as chef_name',
                     'c.profile_image as chef_image',
@@ -173,7 +180,9 @@ class SearchController extends Controller
                         )
                     ) AS distance")
                 )
-        )->where(function ($q) use ($query, $cuisine) {
+        );
+        FoodDish::applyFoodTypeFilter($dishQuery, $foodType, 'd.food_type');
+        $dishQuery->where(function ($q) use ($query, $cuisine) {
                 // 🔹 Dish or Chef name search
                 $q->where(function ($sub) use ($query) {
                     $sub->where('d.name', 'like', "%$query%")
@@ -211,6 +220,7 @@ class SearchController extends Controller
                 'id' => $row->dish_id,
                 'name' => $row->dish_name,
                 'image' => !empty($row->dish_image) ? asset($row->dish_image) : null,
+                'food_type' => $row->food_type,
                 'chef' => [
                     'id' => $row->chef_id,
                     'name' => $row->chef_name,

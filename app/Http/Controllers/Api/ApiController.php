@@ -3684,6 +3684,10 @@ class ApiController extends Controller
 
     public function listFoodDishes(Request $request)
     {
+        if ($request->filled('food_type') && FoodDish::normalizeFoodType($request->query('food_type')) === null) {
+            return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
+        }
+
         $data = DB::table('food_dishes as fd')
             ->join('chefs as ch', 'fd.chef_id', '=', 'ch.id')
             ->leftJoin('category_food_dishes as cfd', 'fd.id', '=', 'cfd.food_dish_id')
@@ -3697,9 +3701,13 @@ class ApiController extends Controller
                 'ch.name as chef_name',
                 DB::raw("GROUP_CONCAT(cat.title SEPARATOR ', ') as category_names") // тЬЕ multiple categories
             )
-            ->when(in_array($request->query('food_type'), FoodDish::foodTypes(), true), function ($query) use ($request) {
-                $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$request->query('food_type')]);
-            })
+            ->where('fd.is_active', 1)
+            ->where('ch.is_verify', 1)
+            ->whereNull('ch.deleted_at');
+
+        FoodDish::applyFoodTypeFilter($data, $request->query('food_type'), 'fd.food_type');
+
+        $data = $data
             ->groupBy('fd.id', 'fd.name', 'fd.description', 'fd.food_type', 'fd.image', 'ch.name')
             ->get();
 
@@ -3716,6 +3724,10 @@ class ApiController extends Controller
         $page    = $request->get('page', 1);
         $perPage = $request->get('per_page', 10);
         $foodType = $request->query('food_type');
+
+        if ($request->filled('food_type') && FoodDish::normalizeFoodType($foodType) === null) {
+            return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
+        }
 
         // 1я╕ПтГг Logged-in user
         $user = Auth::user();
@@ -3745,11 +3757,11 @@ class ApiController extends Controller
          * 4я╕ПтГг Check dish existence globally (without radius)
          */
         $globalDishQuery = DB::table('food_dishes as fd')
-            ->join('chefs as c', 'fd.chef_id', '=', 'c.id');
-        
-        if (in_array($foodType, FoodDish::foodTypes(), true)) {
-            $globalDishQuery->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$foodType]);
-        }
+            ->join('chefs as c', 'fd.chef_id', '=', 'c.id')
+            ->where('fd.is_active', 1)
+            ->where('c.is_verify', 1)
+            ->whereNull('c.deleted_at');
+        FoodDish::applyFoodTypeFilter($globalDishQuery, $foodType, 'fd.food_type');
 
         if (!empty($search)) {
             $globalDishQuery->where(function ($q) use ($search) {
@@ -3790,11 +3802,11 @@ class ApiController extends Controller
                 )
             ) AS distance")
             )
+            ->where('fd.is_active', 1)
+            ->where('c.is_verify', 1)
+            ->whereNull('c.deleted_at')
             ->having('distance', '<=', $radius);
-        
-        if (in_array($foodType, FoodDish::foodTypes(), true)) {
-            $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$foodType]);
-        }
+        FoodDish::applyFoodTypeFilter($query, $foodType, 'fd.food_type');
         
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {

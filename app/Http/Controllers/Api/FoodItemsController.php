@@ -493,6 +493,9 @@ class FoodItemsController extends Controller
     }
     public function getTodayDishes(Request $request, $chefId)
     {
+        if ($response = $this->invalidFoodTypeResponse($request)) {
+            return $response;
+        }
         $today  = strtolower(\Carbon\Carbon::now()->format('l')); // e.g. "thursday"
         $noAvailability = false;
         $page    = $request->get('page', 1);
@@ -522,8 +525,10 @@ class FoodItemsController extends Controller
         }
 
         $chef = \DB::table('chefs')
-            ->select('id', 'working_days')
+            ->select('id', 'working_days', 'available')
             ->where('id', $chefId)
+            ->where('is_verify', 1)
+            ->whereNull('deleted_at')
             ->first();
 
         // dd($chef);
@@ -548,7 +553,9 @@ class FoodItemsController extends Controller
             return CommonHelper::apiResponse(200, false, "Chef not available today ($today).", []);
         }
 
-
+        $noAvailability = $noAvailability || !(bool) $chef->available;
+        
+        
         // âœ… Cuisine mapping
         $cuisines = \DB::table('cuisine_type')->pluck('title', 'id'); // [id => title]
 
@@ -573,13 +580,12 @@ class FoodItemsController extends Controller
                 'f.food_type'
             )
             ->where('f.chef_id', $chefId)
+            ->where('f.is_active', 1)
             // ->where('f.in_stock', 1)
             // ->where('f.tags',$tagId)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
 
-        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->whereRaw("FIND_IN_SET(?, REPLACE(f.food_type, ' ', ''))", [$request->query('food_type')]);
-        }
+        FoodDish::applyFoodTypeFilter($query, $request->query('food_type'), 'f.food_type');
 
         if (!empty($categoryId)) {
             $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);
@@ -625,6 +631,10 @@ class FoodItemsController extends Controller
 
     public function getLaterDishes(Request $request, $chefId)
     {
+        if ($response = $this->invalidFoodTypeResponse($request)) {
+            return $response;
+        }
+
         $today = strtolower(\Carbon\Carbon::now()->format('l')); // e.g. "thursday"
 
         $page       = $request->get('page', 1);
@@ -638,8 +648,10 @@ class FoodItemsController extends Controller
         // }
         // âœ… Chef record fetch
         $chef = \DB::table('chefs')
-            ->select('id', 'working_days', 'name')
+            ->select('id', 'working_days', 'name', 'available')
             ->where('id', $chefId)
+            ->where('is_verify', 1)
+            ->whereNull('deleted_at')
             ->first();
 
         // dd($chef);
@@ -691,7 +703,7 @@ class FoodItemsController extends Controller
         if (empty($laterDays)) {
             $noAvailability = true;
         }
-
+        $noAvailability = $noAvailability || !(bool) $chef->available;
 
         // âœ… Cuisine mapping
         $cuisines = \DB::table('cuisine_type')->pluck('title', 'id'); // [id => title]
@@ -717,11 +729,10 @@ class FoodItemsController extends Controller
                 'f.food_type'
             )
             ->where('f.chef_id', $chefId)
+            ->where('f.is_active', 1)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
 
-        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->whereRaw("FIND_IN_SET(?, REPLACE(f.food_type, ' ', ''))", [$request->query('food_type')]);
-        }
+        FoodDish::applyFoodTypeFilter($query, $request->query('food_type'), 'f.food_type');
 
         // âœ… apply category filter if passed
         if (!empty($categoryId)) {
@@ -903,6 +914,9 @@ class FoodItemsController extends Controller
 
     public function getLatestFoodByTag(Request $request, $tagId)
     {
+        if ($response = $this->invalidFoodTypeResponse($request)) {
+            return $response;
+        }
         // 1️⃣ Logged-in user
         $user = Auth::user();
         $today = strtolower(now()->format('l'));
@@ -977,10 +991,13 @@ class FoodItemsController extends Controller
             ) AS distance")
             )
             ->having('distance', '<=', $radius)
+            ->where('chefs.is_verify', 1)
+            ->whereNull('chefs.deleted_at')
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('food_dishes')
-                    ->whereColumn('food_dishes.chef_id', 'chefs.id');
+                    ->whereColumn('food_dishes.chef_id', 'chefs.id')
+                    ->where('food_dishes.is_active', 1);
                 // ->where('food_dishes.in_stock', 1);
             })
             // ->where('available', 1)
@@ -1002,6 +1019,7 @@ class FoodItemsController extends Controller
          */
         $query = DB::table('food_dishes')
             ->whereRaw("FIND_IN_SET(?, tags)", [$tagId])
+            ->where('is_active', 1)
             ->whereIn('chef_id', $nearbyChefIds);
         // ->where('in_stock', 1);  // 👈 Add this line to filter only in-stock items;
 
@@ -1011,9 +1029,7 @@ class FoodItemsController extends Controller
         }
 
 
-        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->whereRaw("FIND_IN_SET(?, REPLACE(food_type, ' ', ''))", [$request->query('food_type')]);
-        }
+        FoodDish::applyFoodTypeFilter($query, $request->query('food_type'));
 
         $foodItems = $query
             ->orderByDesc('in_stock')
@@ -1286,6 +1302,9 @@ class FoodItemsController extends Controller
 
     public function getAllFoodByTag(Request $request, $tagId)
     {
+        if ($response = $this->invalidFoodTypeResponse($request)) {
+            return $response;
+        }
         $page          = (int) $request->get('page', 1);
         $perPage       = (int) $request->get('per_page', 10);
         $cuisineTypeId = $request->input('cuisine_type_id');
@@ -1371,6 +1390,8 @@ class FoodItemsController extends Controller
             // ✅ CHEF CONDITIONS
             // ->where('c.available', 1)
             ->where('c.is_verify', 1)
+            ->whereNull('c.deleted_at')
+            ->where('fd.is_active', 1)
 
             // ✅ working days only if provided
             ->when(!empty($dayName), function ($q) use ($dayName) {
@@ -1391,9 +1412,7 @@ class FoodItemsController extends Controller
             $query->where('fd.cuisine_type_id', $cuisineTypeId);
         }
 
-        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$request->query('food_type')]);
-        }
+        FoodDish::applyFoodTypeFilter($query, $request->query('food_type'), 'fd.food_type');
 
         $query->orderBy('fd.id', 'desc');
 
@@ -1989,5 +2008,19 @@ class FoodItemsController extends Controller
         });
 
         return CommonHelper::apiResponse(200, true, 'Chefs fetched successfully!', $chefs);
+    }
+
+    private function invalidFoodTypeResponse(Request $request)
+    {
+        if (!$request->filled('food_type') || FoodDish::normalizeFoodType($request->query('food_type')) !== null) {
+            return null;
+        }
+
+        return CommonHelper::apiResponse(
+            422,
+            false,
+            'Invalid food type. Allowed values are jain, swaminarayan, and regular.',
+            []
+        );
     }
 }

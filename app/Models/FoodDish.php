@@ -72,6 +72,39 @@ class FoodDish extends Model
         ];
     }
     
+     /**
+     * Normalize a customer supplied food type without silently accepting an
+     * unsupported value. Mobile clients historically sent both title case and
+     * lower case values, while dishes are stored as comma-separated values.
+     */
+    public static function normalizeFoodType(mixed $foodType): ?string
+    {
+        if (!is_string($foodType) || trim($foodType) === '') {
+            return null;
+        }
+
+        $foodType = strtolower(trim($foodType));
+
+        return in_array($foodType, self::foodTypes(), true) ? $foodType : null;
+    }
+
+    /**
+     * Apply the legacy comma-separated food type filter to a query builder.
+     */
+    public static function applyFoodTypeFilter($query, mixed $foodType, string $column = 'food_type')
+    {
+        $foodType = self::normalizeFoodType($foodType);
+
+        if ($foodType !== null) {
+            $query->whereRaw(
+                "FIND_IN_SET(?, LOWER(REPLACE(COALESCE({$column}, ''), ' ', '')))",
+                [$foodType]
+            );
+        }
+
+        return $query;
+    }
+    
     // 🔁 Relationships
 
     public function chef()
