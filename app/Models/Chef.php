@@ -92,6 +92,22 @@ class Chef extends Authenticatable
     }
 
     /**
+     * Restrict a query-builder chef listing to a normalized working day.
+     *
+     * Casting the JSON value to text also matches legacy double-encoded rows,
+     * while lower-casing makes the comparison consistent with PHP checks.
+     */
+    public static function applyWorkingDayFilter($query, string $day, string $column = 'working_days')
+    {
+        $day = strtolower(trim($day));
+
+        return $query->whereRaw(
+            "LOWER(CAST({$column} AS CHAR)) LIKE ?",
+            ['%' . $day . '%']
+        );
+    }
+
+    /**
      * Return the usable file paths stored in a document attribute.
      *
      * Older records may contain JSON placeholders such as `null`, `[null]`,

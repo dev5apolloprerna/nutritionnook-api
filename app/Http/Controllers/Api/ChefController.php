@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\FoodDish;
+use App\Models\Chef;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 use App\Helpers\CommonHelper;
@@ -290,7 +291,7 @@ public function todayChef(Request $request)
         )
         ->where('available', 1)
         ->where('is_verify',1)
-        ->whereJsonContains('working_days', $today)
+        ->tap(fn ($query) => Chef::applyWorkingDayFilter($query, $today))
         ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('food_dishes')

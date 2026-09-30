@@ -8,6 +8,7 @@ use App\Helpers\CommonHelper;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Chef;
 
 class NearByChefsController extends Controller
 {
@@ -113,15 +114,7 @@ class NearByChefsController extends Controller
         // to a fixed number of chefs.
         if ($day) {
             //$chefsQuery->whereJsonContains('chefs.working_days', $day);
-            $chefsQuery->where(function ($query) use ($day) {
-                $query->whereJsonContains('chefs.working_days', $day)
-                    // Some existing records were JSON-encoded twice by the admin
-                    // form. Keep them searchable until those rows are edited.
-                    ->orWhereRaw(
-                        'LOWER(JSON_UNQUOTE(chefs.working_days)) LIKE ?',
-                        ['%"' . $day . '"%']
-                    );
-            });
+            Chef::applyWorkingDayFilter($chefsQuery, $day, 'chefs.working_days');
         }
 
         // 7️⃣ Pagination

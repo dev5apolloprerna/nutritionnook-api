@@ -1061,11 +1061,11 @@ class FoodItemsController extends Controller
 
         // 👉 Filter chefs by working day
         if ($dayName) {
-            $chefs = $chefs->filter(function ($chef) use ($dayName) {
-                $days = json_decode($chef->working_days, true);
-                return is_array($days)
-                    && in_array($dayName, array_map('strtolower', $days));
-            });
+            $chefs = $chefs->filter(fn ($chef) => in_array(
+                $dayName,
+                Chef::normalizeWorkingDays($chef->working_days),
+                true
+            ));
         }
 
         $validChefIds = $chefs->pluck('id')->toArray();
@@ -1805,10 +1805,11 @@ class FoodItemsController extends Controller
 
         // 🔹 Filter by working day
         if ($dayName) {
-            $chefs = $chefs->filter(function ($chef) use ($dayName) {
-                $days = json_decode($chef->working_days, true);
-                return is_array($days) && in_array($dayName, array_map('strtolower', $days));
-            })->values();
+            $chefs = $chefs->filter(fn ($chef) => in_array(
+                $dayName,
+                Chef::normalizeWorkingDays($chef->working_days),
+                true
+            ))->values();
         }
 
         if ($chefs->isEmpty()) {
@@ -1942,13 +1943,11 @@ class FoodItemsController extends Controller
 
         // ðŸ”¹ Agar date diya hai toh filter chefs by working_days
         if ($dayName) {
-            $filtered = $chefs->getCollection()->filter(function ($chef) use ($dayName) {
-                $days = json_decode($chef->working_days, true);
-                if (is_array($days)) {
-                    return in_array($dayName, array_map('strtolower', $days));
-                }
-                return false;
-            })->values();
+            $filtered = $chefs->getCollection()->filter(fn ($chef) => in_array(
+                $dayName,
+                Chef::normalizeWorkingDays($chef->working_days),
+                true
+            ))->values();
             $chefs->setCollection($filtered);
         }
 
