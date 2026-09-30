@@ -154,6 +154,44 @@ class ChefPayoutService
         return $orderDate->copy()->startOfMonth()->addMonth()->day(7)->startOfDay();
     }
 
+    /**
+     * Return the order window covered by the most recent payout cycle.
+     *
+     * The 7th payout closes the second half of the previous month, while the
+     * 22nd payout closes the first half of the current month. Before the 7th,
+     * the latest closed cycle is therefore the previous month's first half.
+     *
+     * @return array{start: Carbon, end: Carbon, payout_date: Carbon}
+     */
+    public static function previousPayoutCycle(Carbon $asOf): array
+    {
+        if ($asOf->day >= 22) {
+            return [
+                'start' => $asOf->copy()->startOfMonth()->startOfDay(),
+                'end' => $asOf->copy()->day(15)->endOfDay(),
+                'payout_date' => $asOf->copy()->day(22)->startOfDay(),
+            ];
+        }
+
+        if ($asOf->day >= 7) {
+            $previousMonth = $asOf->copy()->subMonthNoOverflow();
+
+            return [
+                'start' => $previousMonth->copy()->day(16)->startOfDay(),
+                'end' => $previousMonth->copy()->endOfMonth()->endOfDay(),
+                'payout_date' => $asOf->copy()->day(7)->startOfDay(),
+            ];
+        }
+
+        $previousMonth = $asOf->copy()->subMonthNoOverflow();
+
+        return [
+            'start' => $previousMonth->copy()->startOfMonth()->startOfDay(),
+            'end' => $previousMonth->copy()->day(15)->endOfDay(),
+            'payout_date' => $previousMonth->copy()->day(22)->startOfDay(),
+        ];
+    }
+
     public function retryPayout(int $payoutId): array
     {
         $payout = Payout::find($payoutId);

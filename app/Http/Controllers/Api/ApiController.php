@@ -647,6 +647,13 @@ class ApiController extends Controller
         $nextPayoutAmount = $unpaidData['net_payout'];
         $platformSecurity = $unpaidData['security']; // This is your 10% security
 
+        $previousCycle = ChefPayoutService::previousPayoutCycle($now);
+        $previousCycleOrders = Order::where('chef_id', $chefId)
+            ->where('status', 'delivered')
+            ->whereBetween('date', [$previousCycle['start'], $previousCycle['end']])
+            ->get();
+        $previousCycleData = CommonHelper::chefPayoutBreakdown($previousCycleOrders, $commRate);
+
         $nextPayoutDate = $this->computeNextPayoutDate($unpaidOrders, $now);
 
         // ========== ૪. PDF DATA & GENERATION ==========
@@ -660,6 +667,11 @@ class ApiController extends Controller
             'next_payout_date'    => $nextPayoutDate->format('d M Y'),
             'next_payout_amount'  => number_format($nextPayoutAmount, 2, '.', ''),
             'platform_commission' => number_format($platformSecurity, 2, '.', ''), // Showing 10% Security
+            'previous_payout_cycle_earnings' => number_format($previousCycleData['dish_total'], 2, '.', ''),
+            'previous_payout_cycle_commission' => number_format($previousCycleData['security'], 2, '.', ''),
+            'previous_payout_cycle_start_date' => $previousCycle['start']->toDateString(),
+            'previous_payout_cycle_end_date' => $previousCycle['end']->toDateString(),
+            'previous_payout_date' => $previousCycle['payout_date']->format('d M Y'),
             'fromDate'            => $fromDate,
             'toDate'              => $toDate,
             'generated_at'        => now()->format('d M Y'),
@@ -682,6 +694,11 @@ class ApiController extends Controller
             'pending_payout'     => (float) $pendingPayout,
             'next_payout_date'   => $nextPayoutDate->format('d M Y'),
             'next_payout_amount' => (float) $nextPayoutAmount,
+            'previous_payout_cycle_earnings' => (float) $previousCycleData['dish_total'],
+            'previous_payout_cycle_commission' => (float) $previousCycleData['security'],
+            'previous_payout_cycle_start_date' => $previousCycle['start']->toDateString(),
+            'previous_payout_cycle_end_date' => $previousCycle['end']->toDateString(),
+            'previous_payout_date' => $previousCycle['payout_date']->format('d M Y'),
             'from_date'          => $fromDate,
             'to_date'            => $toDate,
             'pdf_url'            => url('public/invoices/' . $fileName),
@@ -798,6 +815,13 @@ class ApiController extends Controller
             ->get();
         $pending = CommonHelper::chefPayoutBreakdown($unpaidOrders, $commRate);
 
+        $previousCycle = ChefPayoutService::previousPayoutCycle($now);
+        $previousCycleOrders = Order::where('chef_id', $chefId)
+            ->where('status', 'delivered')
+            ->whereBetween('date', [$previousCycle['start'], $previousCycle['end']])
+            ->get();
+        $previousCycleData = CommonHelper::chefPayoutBreakdown($previousCycleOrders, $commRate);
+
         $nextPayoutDate = $this->computeNextPayoutDate($unpaidOrders, $now);
 
         return CommonHelper::apiResponse(200, true, 'Overview details fetched successfully', [
@@ -811,6 +835,11 @@ class ApiController extends Controller
             'next_payout_date'    => $nextPayoutDate->format('d M Y'),
             'next_payout_amount'  => number_format($pending['net_payout'], 2, '.', ''),
             'platform_commission' => number_format($pending['security'], 2, '.', ''),
+            'previous_payout_cycle_earnings' => number_format($previousCycleData['dish_total'], 2, '.', ''),
+            'previous_payout_cycle_commission' => number_format($previousCycleData['security'], 2, '.', ''),
+            'previous_payout_cycle_start_date' => $previousCycle['start']->toDateString(),
+            'previous_payout_cycle_end_date' => $previousCycle['end']->toDateString(),
+            'previous_payout_date' => $previousCycle['payout_date']->format('d M Y'),
         ]);
     }
 

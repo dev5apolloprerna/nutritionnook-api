@@ -128,6 +128,21 @@
 
 <table class="stats-table">
     <tr>
+        <td class="box">
+            <div class="title">Previous Payout Cycle Earnings</div>
+            <div class="amount">{{ $previous_payout_cycle_earnings }}</div>
+            <div class="sub">{{ $previous_payout_cycle_start_date }} to {{ $previous_payout_cycle_end_date }}</div>
+        </td>
+        <td class="box">
+            <div class="title">Previous Cycle Commission</div>
+            <div class="amount">{{ $previous_payout_cycle_commission }}</div>
+            <div class="sub">Payout date: {{ $previous_payout_date }}</div>
+        </td>
+    </tr>
+</table>
+
+<table class="stats-table">
+    <tr>
         <td class="box-third">
             <div class="title">This Month</div>
             <div class="amount">{{ $month }}</div>
