@@ -3701,7 +3701,6 @@ class ApiController extends Controller
                 'ch.name as chef_name',
                 DB::raw("GROUP_CONCAT(cat.title SEPARATOR ', ') as category_names") // тЬЕ multiple categories
             )
-            ->where('fd.is_active', 1)
             ->where('ch.is_verify', 1)
             ->whereNull('ch.deleted_at');
 
@@ -3758,7 +3757,6 @@ class ApiController extends Controller
          */
         $globalDishQuery = DB::table('food_dishes as fd')
             ->join('chefs as c', 'fd.chef_id', '=', 'c.id')
-            ->where('fd.is_active', 1)
             ->where('c.is_verify', 1)
             ->whereNull('c.deleted_at');
         FoodDish::applyFoodTypeFilter($globalDishQuery, $foodType, 'fd.food_type');
@@ -3802,7 +3800,6 @@ class ApiController extends Controller
                 )
             ) AS distance")
             )
-            ->where('fd.is_active', 1)
             ->where('c.is_verify', 1)
             ->whereNull('c.deleted_at')
             ->having('distance', '<=', $radius);

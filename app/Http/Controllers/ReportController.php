@@ -496,14 +496,13 @@ class ReportController extends Controller
             ->limit(30)
             ->get();
 
-        // Out of Stock / Disabled Items
+        // Out of Stock Items
         $outOfStockItems = FoodDish::select(
                 'food_dishes.*',
                 'chefs.name as chef_name'
             )
             ->join('chefs', 'food_dishes.chef_id', '=', 'chefs.id')
             ->where('food_dishes.in_stock', 0)
-            ->orWhere('food_dishes.is_active', 0)
             ->get();
 
         if ($request->export == 'excel') {
@@ -650,7 +649,7 @@ class ReportController extends Controller
         $sheets = [
             new DynamicExport('top_cuisines', ['id', 'title', 'order_count', 'revenue'], $topCuisines, 'Top Cuisines'),
             new DynamicExport('most_ordered_dishes', ['id', 'name', 'chef_name', 'cuisine', 'order_count', 'total_revenue', 'price'], $mostOrderedDishes, 'Most Ordered Dishes'),
-            new DynamicExport('out_of_stock', ['id', 'name', 'chef_name', 'price', 'in_stock', 'is_active'], $outOfStockItems, 'Out of Stock'),
+            new DynamicExport('out_of_stock', ['id', 'name', 'chef_name', 'price', 'in_stock'], $outOfStockItems, 'Out of Stock'),
         ];
 
         return Excel::download(new ReportMultiSheetExport($sheets), $this->reportFileName('menu-cuisine', $fromDate, $toDate));

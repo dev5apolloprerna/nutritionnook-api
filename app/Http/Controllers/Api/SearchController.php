@@ -20,6 +20,7 @@ class SearchController extends Controller
         $page    = $request->get('page', 1);
         $perPage = $request->get('per_page', 10);
         $foodType = $request->query('food_type');
+        $hasFoodTypeFilter = !empty(FoodDish::normalizeFoodTypes($foodType));
 
         if ($request->filled('food_type') && FoodDish::normalizeFoodTypes($foodType) === null) {
             return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
@@ -100,8 +101,8 @@ class SearchController extends Controller
             return $builder
                 ->where('c.available', 1)
                 ->where('c.is_verify', 1)
-                ->whereNull('c.deleted_at')
-                ->where('d.is_active', 1);
+                ->whereNull('c.deleted_at');
+                // ->where('d.is_active', 1);
         };
         /**
          * 4️⃣ Global existence check (WITHOUT radius)
@@ -145,13 +146,22 @@ class SearchController extends Controller
         $printQuery = $request->boolean('print_query');
         $globalSearchSql = $printQuery ? (clone $globalQuery)->toRawSql() : null;
 
+        $applyKeywordFilter = $query !== '';
+
         if (!$printQuery && !$globalQuery->exists()) {
-            return CommonHelper::apiResponse(
-                404,
-                false,
-                'No results found.',
-                []
-            );
+            // When no food type was selected, an unmatched keyword should not
+            // leave the discovery screen empty. Fall back to every otherwise
+            // eligible dish in the configured radius.
+            if (!$hasFoodTypeFilter && $applyKeywordFilter) {
+                $applyKeywordFilter = false;
+            } else {
+                return CommonHelper::apiResponse(
+                    404,
+                    false,
+                    'No results found.',
+                    []
+                );
+            }
         }
 
 
@@ -206,7 +216,7 @@ class SearchController extends Controller
         );
         FoodDish::applyFoodTypeFilter($dishQuery, $foodType, 'd.food_type');
 
-        if ($query !== '') {
+        if ($applyKeywordFilter) {
             $dishQuery->where(function ($q) use ($query, $cuisine) {
                 // 🔹 Dish or Chef name search
                 $q->where(function ($sub) use ($query) {

@@ -367,7 +367,6 @@ class NearByChefsController extends Controller
         // 2. Fetch random 10 dishes from nearby chefs (same pincode)
         $dishes = DB::table('food_dishes as fd')
             ->join('chefs as c', 'fd.chef_id', '=', 'c.id')
-            ->where('fd.is_active', 1)
             ->where('c.pincode', $userAddress->pincode)
             ->select(
                 'fd.id',

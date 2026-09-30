@@ -580,7 +580,6 @@ class FoodItemsController extends Controller
                 'f.food_type'
             )
             ->where('f.chef_id', $chefId)
-            ->where('f.is_active', 1)
             // ->where('f.in_stock', 1)
             // ->where('f.tags',$tagId)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
@@ -729,7 +728,6 @@ class FoodItemsController extends Controller
                 'f.food_type'
             )
             ->where('f.chef_id', $chefId)
-            ->where('f.is_active', 1)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
 
         FoodDish::applyFoodTypeFilter($query, $request->query('food_type'), 'f.food_type');
@@ -996,8 +994,7 @@ class FoodItemsController extends Controller
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('food_dishes')
-                    ->whereColumn('food_dishes.chef_id', 'chefs.id')
-                    ->where('food_dishes.is_active', 1);
+                    ->whereColumn('food_dishes.chef_id', 'chefs.id');
                 // ->where('food_dishes.in_stock', 1);
             })
             // ->where('available', 1)
@@ -1019,7 +1016,6 @@ class FoodItemsController extends Controller
          */
         $query = DB::table('food_dishes')
             ->whereRaw("FIND_IN_SET(?, tags)", [$tagId])
-            ->where('is_active', 1)
             ->whereIn('chef_id', $nearbyChefIds);
         // ->where('in_stock', 1);  // 👈 Add this line to filter only in-stock items;
 
@@ -1391,7 +1387,6 @@ class FoodItemsController extends Controller
             // ->where('c.available', 1)
             ->where('c.is_verify', 1)
             ->whereNull('c.deleted_at')
-            ->where('fd.is_active', 1)
 
             // ✅ working days only if provided
             ->when(!empty($dayName), function ($q) use ($dayName) {

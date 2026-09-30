@@ -740,7 +740,7 @@ Route::get('/trending-dishes/{userId}', function ($userId) {
     // Fetch dishes from chefs with same pincode (dummy "nearby" logic)
     $dishes = DB::table('food_dishes as fd')
         ->join('chefs as c', 'fd.chef_id', '=', 'c.id')
-        ->where('fd.is_active', 1)
+        // ->where('fd.is_active', 1)
         ->where('c.pincode', $userAddress->pincode)
         ->select(
             'fd.id',
