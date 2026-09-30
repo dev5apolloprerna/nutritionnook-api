@@ -145,6 +145,7 @@ class ApiController extends Controller
     public function getPayoutTransactions(Request $request)
     {
         $chefId = Auth::id();
+        $chef = Chef::find($chefId);
 
         $query = Payout::where('chef_id', $chefId);
 
@@ -172,11 +173,28 @@ class ApiController extends Controller
             ->paginate(10)
             ->appends($request->query()); // keeps filters during pagination
 
+        $previousCycle = ChefPayoutService::previousPayoutCycle(Carbon::now());
+        $previousCycleOrders = Order::where('chef_id', $chefId)
+            ->where('status', 'delivered')
+            ->whereBetween('date', [$previousCycle['start'], $previousCycle['end']])
+            ->get();
+        $previousCycleData = CommonHelper::chefPayoutBreakdown(
+            $previousCycleOrders,
+            $chef->commission ?? 0
+        );
+        $payoutData = array_merge($transactions->toArray(), [
+            'previous_payout_cycle_earnings' => number_format($previousCycleData['dish_total'], 2, '.', ''),
+            'previous_payout_cycle_commission' => number_format($previousCycleData['security'], 2, '.', ''),
+            'previous_payout_cycle_start_date' => $previousCycle['start']->toDateString(),
+            'previous_payout_cycle_end_date' => $previousCycle['end']->toDateString(),
+            'previous_payout_date' => $previousCycle['payout_date']->format('d M Y'),
+        ]);
+
         return CommonHelper::apiResponse(
             200,
             true,
             'Payout transactions fetched successfully',
-            $transactions
+            $payoutData // $transactions
         );
     }
 

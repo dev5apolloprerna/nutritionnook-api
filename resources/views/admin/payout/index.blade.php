@@ -87,28 +87,44 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-lg-2 col-md-4 mb-3">
             <div class="nn-summary-stat">
                 <div class="stat-num">{{ count($chefSummaries) }}</div>
                 <div class="stat-lbl">Eligible Chefs</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-lg-2 col-md-4 mb-3">
             <div class="nn-summary-stat">
                 <div class="stat-num">₹{{ number_format(collect($chefSummaries)->sum('dish_price'), 2) }}</div>
                 <div class="stat-lbl">Total Dish Price</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-lg-2 col-md-4 mb-3">
             <div class="nn-summary-stat">
                 <div class="stat-num">₹{{ number_format(collect($chefSummaries)->sum('security_deposit'), 2) }}</div>
                 <div class="stat-lbl">Security Held</div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-lg-2 col-md-4 mb-3">
             <div class="nn-summary-stat" style="border: 2px solid #28a745;">
                 <div class="stat-num" style="color: #28a745;">₹{{ number_format(collect($chefSummaries)->sum('net_payout'), 2) }}</div>
                 <div class="stat-lbl">Net Payable</div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="nn-summary-stat">
+                <div class="stat-num">₹{{ number_format($previousCycleSummary['earnings'], 2) }}</div>
+                <div class="stat-lbl">Previous Cycle Earnings</div>
+                <small class="text-muted">
+                    {{ $previousCycleSummary['start_date']->format('M d') }}–{{ $previousCycleSummary['end_date']->format('M d') }}
+                </small>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 mb-3">
+            <div class="nn-summary-stat" style="border: 2px solid #dc3545;">
+                <div class="stat-num" style="color: #dc3545;">₹{{ number_format($previousCycleSummary['commission'], 2) }}</div>
+                <div class="stat-lbl">Previous Cycle Commission</div>
+                <small class="text-muted">Paid {{ $previousCycleSummary['payout_date']->format('M d, Y') }}</small>
             </div>
         </div>
     </div>

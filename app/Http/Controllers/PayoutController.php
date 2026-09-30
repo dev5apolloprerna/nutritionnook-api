@@ -194,9 +194,34 @@ class PayoutController extends Controller
         }
 
         $recentPayouts = Payout::with('chef')->orderByDesc('created_at')->limit(10)->get();
+        $previousCycle = ChefPayoutService::previousPayoutCycle(Carbon::now());
+        $previousCycleOrders = Order::where('status', 'delivered')
+            ->whereBetween('date', [$previousCycle['start'], $previousCycle['end']])
+            ->get();
+        $commissionRates = Chef::whereIn('id', $previousCycleOrders->pluck('chef_id')->unique())
+            ->pluck('commission', 'id');
+        $previousCycleBreakdown = $previousCycleOrders
+            ->groupBy('chef_id')
+            ->reduce(function (array $totals, $orders, $chefId) use ($commissionRates) {
+                $breakdown = CommonHelper::chefPayoutBreakdown(
+                    $orders,
+                    (float) ($commissionRates[$chefId] ?? 0)
+                );
+                $totals['dish_total'] += $breakdown['dish_total'];
+                $totals['security'] += $breakdown['security'];
+
+                return $totals;
+            }, ['dish_total' => 0.0, 'security' => 0.0]);
+        $previousCycleSummary = [
+            'earnings' => $previousCycleBreakdown['dish_total'],
+            'commission' => $previousCycleBreakdown['security'],
+            'start_date' => $previousCycle['start'],
+            'end_date' => $previousCycle['end'],
+            'payout_date' => $previousCycle['payout_date'],
+        ];
         $nextScheduledDate = Carbon::now()->addDays(7); // ટેમ્પરરી ડેટ
 
-        return view('admin.payout.index', compact('chefSummaries', 'recentPayouts', 'nextScheduledDate'));
+        return view('admin.payout.index', compact('chefSummaries', 'recentPayouts', 'nextScheduledDate', 'previousCycleSummary'));
     }
 
     public function run(Request $request)
