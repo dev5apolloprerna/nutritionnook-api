@@ -116,7 +116,7 @@ class FoodDish extends Model
 
             $foodType = trim($foodType);
 
-        if ($foodType === '') {
+            if ($foodType === '') {
                 continue;
             }
 

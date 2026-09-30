@@ -9,19 +9,33 @@ use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class SearchController extends Controller
 {
 
     public function search(Request $request)
     {
-        $query   = $request->input('q');
+        $query   = trim((string) $request->input('q', ''));
         $page    = $request->get('page', 1);
         $perPage = $request->get('per_page', 10);
         $foodType = $request->query('food_type');
 
         if ($request->filled('food_type') && FoodDish::normalizeFoodTypes($foodType) === null) {
             return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
+        }
+
+        $coordinatesProvided = $request->filled('latitude') || $request->filled('longitude');
+
+        if ($coordinatesProvided) {
+            $validator = Validator::make($request->only(['latitude', 'longitude']), [
+                'latitude' => ['required', 'numeric', 'between:-90,90'],
+                'longitude' => ['required', 'numeric', 'between:-180,180'],
+            ]);
+
+            if ($validator->fails()) {
+                return CommonHelper::apiResponse(422, false, 'Invalid location coordinates.', $validator->errors());
+            }
         }
         // $today = strtolower(now()->format('l'));
         // 1️⃣ Logged-in user
@@ -39,7 +53,10 @@ class SearchController extends Controller
             }
         }
 
-        if (!$user) {
+        if ($coordinatesProvided) {
+            $userLat = (float) $request->input('latitude');
+            $userLng = (float) $request->input('longitude');
+        } elseif (!$user) {
             $userLat = $defaultLat;
             $userLng = $defaultLng;
         } else {
@@ -84,8 +101,7 @@ class SearchController extends Controller
                 ->where('c.available', 1)
                 ->where('c.is_verify', 1)
                 ->whereNull('c.deleted_at')
-                ->where('d.is_active', 1)
-                ->where('d.in_stock', 1);
+                ->where('d.is_active', 1);
         };
         /**
          * 4️⃣ Global existence check (WITHOUT radius)
@@ -103,10 +119,10 @@ class SearchController extends Controller
                 ->join('chefs as c', 'c.id', '=', 'd.chef_id')
         );
         FoodDish::applyFoodTypeFilter($globalQuery, $foodType, 'd.food_type');
-        
-        $cuisine = DB::table('cuisine_type')
-            ->where('title', 'like', "%$query%")
-            ->first();
+
+        $cuisine = $query !== ''
+            ? DB::table('cuisine_type')->where('title', 'like', "%$query%")->first()
+            : null;
 
         // if ($cuisine) {
         //     $globalQuery->orWhere(function ($q) use ($cuisine) {
@@ -115,16 +131,21 @@ class SearchController extends Controller
         //     });
         // }
 
-        $globalQuery->where(function ($q) use ($query, $cuisine) {
-            $q->where('d.name', 'like', "%$query%")
-                ->orWhere('c.name', 'like', "%$query%");
+        if ($query !== '') {
+            $globalQuery->where(function ($q) use ($query, $cuisine) {
+                $q->where('d.name', 'like', "%$query%")
+                    ->orWhere('c.name', 'like', "%$query%");
 
             if ($cuisine) {
-                $q->orWhere('d.cuisine_type_id', $cuisine->id);
-            }
-        });
+                    $q->orWhere('d.cuisine_type_id', $cuisine->id);
+                }
+            });
+        }
 
-        if (!$globalQuery->exists()) {
+        $printQuery = $request->boolean('print_query');
+        $globalSearchSql = $printQuery ? (clone $globalQuery)->toRawSql() : null;
+
+        if (!$printQuery && !$globalQuery->exists()) {
             return CommonHelper::apiResponse(
                 404,
                 false,
@@ -167,22 +188,26 @@ class SearchController extends Controller
                     'd.name as dish_name',
                     'd.image as dish_image',
                     'd.food_type',
+                    'd.in_stock',
                     'c.id as chef_id',
                     'c.name as chef_name',
-                    'c.profile_image as chef_image',
-                    DB::raw("(
-                        6371 * acos(
-                            cos(radians($userLat)) *
-                            cos(radians(latitude)) *
-                            cos(radians(longitude) - radians($userLng)) +
-                            sin(radians($userLat)) *
-                            sin(radians(latitude))
-                        )
-                    ) AS distance")
+                    'c.profile_image as chef_image'
+                )
+                ->selectRaw(
+                    '6371 * acos(LEAST(1, GREATEST(-1,
+                        cos(radians(?)) *
+                        cos(radians(c.latitude)) *
+                        cos(radians(c.longitude) - radians(?)) +
+                        sin(radians(?)) *
+                        sin(radians(c.latitude))
+                    ))) AS distance',
+                    [$userLat, $userLng, $userLat]
                 )
         );
         FoodDish::applyFoodTypeFilter($dishQuery, $foodType, 'd.food_type');
-        $dishQuery->where(function ($q) use ($query, $cuisine) {
+
+        if ($query !== '') {
+            $dishQuery->where(function ($q) use ($query, $cuisine) {
                 // 🔹 Dish or Chef name search
                 $q->where(function ($sub) use ($query) {
                     $sub->where('d.name', 'like', "%$query%")
@@ -193,9 +218,26 @@ class SearchController extends Controller
                 if ($cuisine) {
                     $q->orWhere('d.cuisine_type_id', $cuisine->id);
                 }
-            })
-            ->having('distance', '<=', $radius);
+            });
+        }
 
+        $dishQuery->having('distance', '<=', $radius);
+
+        if ($printQuery) {
+            $resultsQuery = (clone $dishQuery)
+                ->orderBy('distance', 'asc')
+                ->forPage($page, $perPage);
+
+            return CommonHelper::apiResponse(
+                200,
+                true,
+                'Search queries generated successfully.',
+                [
+                    'global_search_sql' => $globalSearchSql,
+                    'results_sql' => $resultsQuery->toRawSql(),
+                ]
+            );
+        }
 
         // 6️⃣ Pagination
         $dishes = $dishQuery
@@ -221,6 +263,8 @@ class SearchController extends Controller
                 'name' => $row->dish_name,
                 'image' => !empty($row->dish_image) ? asset($row->dish_image) : null,
                 'food_type' => $row->food_type,
+                'in_stock' => (bool) $row->in_stock,
+                'distance_km' => round((float) $row->distance, 2),
                 'chef' => [
                     'id' => $row->chef_id,
                     'name' => $row->chef_name,
