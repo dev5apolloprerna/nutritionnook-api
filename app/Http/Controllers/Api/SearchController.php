@@ -20,7 +20,7 @@ class SearchController extends Controller
         $perPage = $request->get('per_page', 10);
         $foodType = $request->query('food_type');
 
-        if ($request->filled('food_type') && FoodDish::normalizeFoodType($foodType) === null) {
+        if ($request->filled('food_type') && FoodDish::normalizeFoodTypes($foodType) === null) {
             return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
         }
         // $today = strtolower(now()->format('l'));
@@ -102,7 +102,7 @@ class SearchController extends Controller
             DB::table('food_dishes as d')
                 ->join('chefs as c', 'c.id', '=', 'd.chef_id')
         );
-        FoodDish::applyFoodTypeFilter($globalQuery, $foodType, 'd.food_type');      
+        FoodDish::applyFoodTypeFilter($globalQuery, $foodType, 'd.food_type');
         
         $cuisine = DB::table('cuisine_type')
             ->where('title', 'like', "%$query%")

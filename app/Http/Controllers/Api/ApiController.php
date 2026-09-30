@@ -3684,7 +3684,7 @@ class ApiController extends Controller
 
     public function listFoodDishes(Request $request)
     {
-        if ($request->filled('food_type') && FoodDish::normalizeFoodType($request->query('food_type')) === null) {
+        if ($request->filled('food_type') && FoodDish::normalizeFoodTypes($request->query('food_type')) === null) {
             return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
         }
 
@@ -3725,7 +3725,7 @@ class ApiController extends Controller
         $perPage = $request->get('per_page', 10);
         $foodType = $request->query('food_type');
 
-        if ($request->filled('food_type') && FoodDish::normalizeFoodType($foodType) === null) {
+        if ($request->filled('food_type') && FoodDish::normalizeFoodTypes($foodType) === null) {
             return CommonHelper::apiResponse(422, false, 'Invalid food type. Allowed values are jain, swaminarayan, and regular.', []);
         }
 

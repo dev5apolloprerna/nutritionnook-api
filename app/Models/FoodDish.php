@@ -72,7 +72,7 @@ class FoodDish extends Model
         ];
     }
     
-     /**
+    /**
      * Normalize a customer supplied food type without silently accepting an
      * unsupported value. Mobile clients historically sent both title case and
      * lower case values, while dishes are stored as comma-separated values.
@@ -89,22 +89,71 @@ class FoodDish extends Model
     }
 
     /**
-     * Apply the legacy comma-separated food type filter to a query builder.
+     * Normalize one or more food types supplied as an array or comma-separated
+     * query parameter. An empty parameter means that no filter was requested,
+     * while null indicates that at least one unsupported value was supplied.
      */
-    public static function applyFoodTypeFilter($query, mixed $foodType, string $column = 'food_type')
+    public static function normalizeFoodTypes(mixed $foodTypes): ?array
     {
-        $foodType = self::normalizeFoodType($foodType);
+        if ($foodTypes === null || $foodTypes === '') {
+            return [];
+        }
 
-        if ($foodType !== null) {
-            $query->whereRaw(
-                "FIND_IN_SET(?, LOWER(REPLACE(COALESCE({$column}, ''), ' ', '')))",
-                [$foodType]
-            );
+        if (is_string($foodTypes)) {
+            $foodTypes = explode(',', $foodTypes);
+        }
+
+        if (!is_array($foodTypes)) {
+            return null;
+        }
+
+        $normalized = [];
+
+        foreach ($foodTypes as $foodType) {
+            if (!is_string($foodType)) {
+                return null;
+            }
+
+            $foodType = trim($foodType);
+
+        if ($foodType === '') {
+                continue;
+            }
+
+            $foodType = self::normalizeFoodType($foodType);
+
+            if ($foodType === null) {
+                return null;
+            }
+
+            $normalized[] = $foodType;
+        }
+
+        return array_values(array_unique($normalized));
+    }
+
+    /**
+     * Apply the legacy comma-separated food type filter to a query builder.
+     * A dish matches when it contains any of the requested food types.
+     */
+    public static function applyFoodTypeFilter($query, mixed $foodTypes, string $column = 'food_type')
+    {
+        $foodTypes = self::normalizeFoodTypes($foodTypes);
+
+        if (!empty($foodTypes)) {
+            $query->where(function ($query) use ($foodTypes, $column) {
+                foreach ($foodTypes as $foodType) {
+                    $query->orWhereRaw(
+                        "FIND_IN_SET(?, LOWER(REPLACE(COALESCE({$column}, ''), ' ', '')))",
+                        [$foodType]
+                    );
+                }
+            });
         }
 
         return $query;
     }
-    
+
     // 🔁 Relationships
 
     public function chef()

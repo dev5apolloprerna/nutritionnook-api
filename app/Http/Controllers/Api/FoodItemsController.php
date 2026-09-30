@@ -2012,7 +2012,7 @@ class FoodItemsController extends Controller
 
     private function invalidFoodTypeResponse(Request $request)
     {
-        if (!$request->filled('food_type') || FoodDish::normalizeFoodType($request->query('food_type')) !== null) {
+        if (!$request->filled('food_type') || FoodDish::normalizeFoodTypes($request->query('food_type')) !== null) {
             return null;
         }
 
