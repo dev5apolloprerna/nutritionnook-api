@@ -63,6 +63,35 @@ class Chef extends Authenticatable
     ];
 
     /**
+     * Normalize working days from both current and legacy JSON storage formats.
+     *
+     * Some older chef records contain a JSON string nested inside JSON. Queries
+     * built with the query builder bypass Eloquent casts, so callers need a
+     * consistent array before checking whether a chef is available today.
+     */
+    public static function normalizeWorkingDays(mixed $workingDays): array
+    {
+        for ($attempt = 0; $attempt < 2 && is_string($workingDays); $attempt++) {
+            $decoded = json_decode($workingDays, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return [];
+            }
+
+            $workingDays = $decoded;
+        }
+
+        if (!is_array($workingDays)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map(
+            static fn ($day) => is_string($day) ? strtolower(trim($day)) : null,
+            $workingDays
+        ))));
+    }
+
+    /**
      * Return the usable file paths stored in a document attribute.
      *
      * Older records may contain JSON placeholders such as `null`, `[null]`,

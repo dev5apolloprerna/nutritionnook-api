@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Tag;
+use App\Models\Chef;
 
 class FoodItemsController extends Controller
 {
@@ -538,7 +539,7 @@ class FoodItemsController extends Controller
         }
 
         // âœ… check today in working_days
-        $days = json_decode($chef->working_days, true);
+        $days = Chef::normalizeWorkingDays($chef->working_days);
 
         // if (!is_array($days) || !in_array($today, $days)) {
         //     return CommonHelper::apiResponse(200, false, "Chef not available today ($today).", []);
@@ -678,22 +679,12 @@ class FoodItemsController extends Controller
         // ✅ NEW: check if chef has zero availability
         $noAvailability = false;
 
-        $days = json_decode($chef->working_days, true);
-
-        // 🔥 handle double encoded JSON
-        if (is_string($days)) {
-            $days = json_decode($days, true);
-        }
+        $days = Chef::normalizeWorkingDays($chef->working_days);
 
         if (!is_array($days) || empty($days)) {
             $noAvailability = true;
             $days = [];
         }
-
-        // ✅ 🔥 Normalize days (IMPORTANT FIX)
-        $days = array_map(function ($day) {
-            return strtolower(trim($day));
-        }, $days);
 
         // ✅ Remove today properly
         $laterDays = array_values(array_diff($days, [$today]));
