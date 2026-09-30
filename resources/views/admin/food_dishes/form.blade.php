@@ -43,7 +43,23 @@
                             <div class="text-danger mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-
+                    
+                    {{-- Spicy Level --}}
+                    <div class="form-group col-md-6">
+                        <label>Food Type <span class="text-danger">*</span></label>
+                        <select name="food_type" class="form-select form-control @error('food_type') is-invalid @enderror" required>
+                            @foreach (\App\Models\FoodDish::foodTypes() as $foodType)
+                                <option value="{{ $foodType }}"
+                                    {{ old('food_type', $dish->food_type ?? \App\Models\FoodDish::FOOD_TYPE_REGULAR) === $foodType ? 'selected' : '' }}>
+                                    {{ ucfirst($foodType) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('food_type')
+                            <div class="text-danger mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
                     {{-- Spicy Level --}}
                     <div class="form-group col-md-6">
                         <label>Spicy Level <span class="text-muted">(Optional)</span></label>

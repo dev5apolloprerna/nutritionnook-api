@@ -1568,6 +1568,7 @@
                     <th>Weight</th>
                     <th>Prep. Time</th>
                     <th>Category</th>
+                    <th>Food Type</th>
                     <th>Recommended</th>
                     <th>In Stock?</th>
                     <th>Actions</th>
@@ -1629,6 +1630,7 @@
                         <span class="badge bg-secondary">—</span>
                         @endforelse
                     </td>
+                    <td><span class="badge bg-primary">{{ ucfirst($item->food_type) }}</span></td>
                     <td class="text-center align-middle">
                         <div class="form-check form-switch d-flex justify-content-center align-items-center m-0" style="height: 100%;">
                             <input class="form-check-input toggle-recommended" type="checkbox"

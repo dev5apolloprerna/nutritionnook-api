@@ -21,6 +21,7 @@
                                 <th>Image</th>
                                 <th>Name</th>
                                 <th>Category</th>
+                                <th>Food Type</th>
                                 <th>Price</th>
                                 <th>Spicy Level</th>
                                 {{-- <th>Availability</th> --}}
@@ -51,6 +52,7 @@
                                             <label class="badge badge-secondary">—</label>
                                         @endif
                                     </td>
+                                    <td><label class="badge badge-info">{{ ucfirst($dish->food_type) }}</label></td>
                                     <td>₹{{ number_format($dish->price, 2) }}</td>
                                     <td>
                                         @if ($dish->spicy_level)

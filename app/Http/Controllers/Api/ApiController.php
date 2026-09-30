@@ -20,6 +20,7 @@ use App\Services\ChefPayoutService;
 use App\Models\HomeScreen;
 use Razorpay\Api\Api;
 use App\Models\Order;
+use App\Models\FoodDish;
 use App\Services\InvoicePricingService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -3634,7 +3635,7 @@ class ApiController extends Controller
 
 
 
-    public function listFoodDishes()
+    public function listFoodDishes(Request $request)
     {
         $data = DB::table('food_dishes as fd')
             ->join('chefs as ch', 'fd.chef_id', '=', 'ch.id')
@@ -3644,11 +3645,15 @@ class ApiController extends Controller
                 'fd.id',
                 'fd.name',
                 'fd.description',
+                'fd.food_type',
                 DB::raw("CONCAT('https://api.nutritionnook.net/', fd.image) AS image"),
                 'ch.name as chef_name',
                 DB::raw("GROUP_CONCAT(cat.title SEPARATOR ', ') as category_names") // тЬЕ multiple categories
             )
-            ->groupBy('fd.id', 'fd.name', 'fd.description', 'fd.image', 'ch.name')
+            ->when(in_array($request->query('food_type'), FoodDish::foodTypes(), true), function ($query) use ($request) {
+                $query->where('fd.food_type', $request->query('food_type'));
+            })
+            ->groupBy('fd.id', 'fd.name', 'fd.description', 'fd.food_type', 'fd.image', 'ch.name')
             ->get();
 
         if ($data->isNotEmpty()) {
@@ -3663,6 +3668,7 @@ class ApiController extends Controller
         $search  = $request->query('search', '');
         $page    = $request->get('page', 1);
         $perPage = $request->get('per_page', 10);
+        $foodType = $request->query('food_type');
 
         // 1я╕ПтГг Logged-in user
         $user = Auth::user();
@@ -3693,6 +3699,10 @@ class ApiController extends Controller
          */
         $globalDishQuery = DB::table('food_dishes as fd')
             ->join('chefs as c', 'fd.chef_id', '=', 'c.id');
+        
+        if (in_array($foodType, FoodDish::foodTypes(), true)) {
+            $globalDishQuery->where('fd.food_type', $foodType);
+        }
 
         if (!empty($search)) {
             $globalDishQuery->where(function ($q) use ($search) {
@@ -3734,7 +3744,11 @@ class ApiController extends Controller
             ) AS distance")
             )
             ->having('distance', '<=', $radius);
-
+        
+        if (in_array($foodType, FoodDish::foodTypes(), true)) {
+            $query->where('fd.food_type', $foodType);
+        }
+        
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('fd.name', 'LIKE', "%{$search}%")

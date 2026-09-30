@@ -29,7 +29,8 @@ class FoodItem extends Model
         'is_get_now_or_get_later',
         'tags',
         'base_price',
-        'secuirity_deposite'
+        'secuirity_deposite',
+        'food_type',
     ];
 
     public function user()

@@ -12,6 +12,9 @@ class FoodDish extends Model
     public const GET_NOW = 'get_now';
     public const GET_LATER = 'get_later';
     public const BOTH = 'both';
+    public const FOOD_TYPE_JAIN = 'jain';
+    public const FOOD_TYPE_SWAMINARAYAN = 'swaminarayan';
+    public const FOOD_TYPE_REGULAR = 'regular';
 
     protected $table = 'food_dishes';
 
@@ -35,7 +38,7 @@ class FoodDish extends Model
         'is_get_now_or_get_later',
         'tags',
         'in_stock',
-        
+        'food_type',
     ];
 
     protected $casts = [
@@ -55,6 +58,19 @@ class FoodDish extends Model
             self::GET_LATER => [self::GET_LATER, self::BOTH],
             default => [],
         };
+    }
+    
+    
+    /**
+     * Food types supported by the chef, admin, and customer applications.
+     */
+    public static function foodTypes(): array
+    {
+        return [
+            self::FOOD_TYPE_JAIN,
+            self::FOOD_TYPE_SWAMINARAYAN,
+            self::FOOD_TYPE_REGULAR,
+        ];
     }
     
     // 🔁 Relationships

@@ -50,6 +50,7 @@ class FoodDishController extends Controller
             // 'availability'      => 'nullable|string',
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tag_id'            => 'nullable|array',
+            'food_type'         => 'required|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         $data = $request->only([
@@ -59,7 +60,8 @@ class FoodDishController extends Controller
             'description',
             'ingredients',
             'allergy_warning',
-            'cuisine_type_id'
+            'cuisine_type_id',
+            'food_type'
         ]);
 
         $pricing = DishPriceCalculator::calculate(
@@ -178,6 +180,7 @@ class FoodDishController extends Controller
             'allergy_warning'   => 'nullable|string',
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tag_id'            => 'nullable|array',
+            'food_type'         => 'required|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         $data = $request->only([
@@ -187,7 +190,8 @@ class FoodDishController extends Controller
             'description',
             'ingredients',
             'allergy_warning',
-            'cuisine_type_id'
+            'cuisine_type_id',
+            'food_type'
         ]);
 
         $pricing = DishPriceCalculator::calculate(

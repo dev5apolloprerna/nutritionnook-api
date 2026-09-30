@@ -83,6 +83,7 @@ class FoodItemsController extends Controller
             'cuisine_type_id' => 'required|exists:cuisine_type,id',
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tags' => 'required',
+            'food_type' => 'required|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         if ($validator->fails()) {
@@ -135,6 +136,7 @@ class FoodItemsController extends Controller
             'cuisine_type_id'     => $request->cuisine_type_id,
             'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
             'tags'                 => $request->tags,
+            'food_type'            => $request->food_type,
         ];
 
         $foodItem = \App\Models\FoodItem::create($data);
@@ -177,6 +179,7 @@ class FoodItemsController extends Controller
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tags'              => 'required',
             'image'             => 'nullable|image',
+            'food_type'         => 'required|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         if ($validator->fails()) {
@@ -238,6 +241,7 @@ class FoodItemsController extends Controller
             'cuisine_type_id'    => $request->cuisine_type_id,
             'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
             'tags'                => $request->tags,
+            'food_type'           => $request->food_type,
         ];
 
         // âœ… Only update image if new one is uploaded
@@ -347,6 +351,7 @@ class FoodItemsController extends Controller
         $categoryId  = $request->query('category_id', 'all');
         $inStock     = $request->query('in_stock', null);
         $recommended = $request->query('is_recommended', null);
+        $foodType    = $request->query('food_type');
         $perPage     = $request->query('per_page', 10);
 
         $query = \DB::table('food_dishes as fd')
@@ -362,6 +367,10 @@ class FoodItemsController extends Controller
             //->join('categories as c', 'fd.category_id', '=', 'c.id')
             // ->where('fd.in_stock','1')
             ->where('fd.chef_id', $user->id);
+
+        if (in_array($foodType, FoodDish::foodTypes(), true)) {
+            $query->where('fd.food_type', $foodType);
+        }
 
         // ✅ Search filter
         if (!empty($search)) {
@@ -558,13 +567,17 @@ class FoodItemsController extends Controller
                 'f.is_get_now_or_get_later',
                 'f.category_id',
                 'f.in_stock',
-                'f.tags'
+                'f.tags',
+                'f.food_type'
             )
             ->where('f.chef_id', $chefId)
             // ->where('f.in_stock', 1)
             // ->where('f.tags',$tagId)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
 
+        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
+            $query->where('f.food_type', $request->query('food_type'));
+        }
 
         if (!empty($categoryId)) {
             $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);
@@ -594,7 +607,8 @@ class FoodItemsController extends Controller
                 "cuisine"             => $cuisines[$dish->cuisine_type_id] ?? null,
                 "is_get_now_or_get_later" => $dish->is_get_now_or_get_later,
                 "category_id"           => $dish->category_id,
-                "in_stock" => $noAvailability ? 0 : $dish->in_stock
+                "in_stock"              => $noAvailability ? 0 : $dish->in_stock,
+                "food_type"             => $dish->food_type,
             ];
         });
 
@@ -697,10 +711,15 @@ class FoodItemsController extends Controller
                 'f.is_get_now_or_get_later',
                 'f.category_id',
                 'f.in_stock',
-                'f.tags' // debug
+                'f.tags', // debug
+                'f.food_type'
             )
             ->where('f.chef_id', $chefId)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
+
+        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
+            $query->where('f.food_type', $request->query('food_type'));
+        }
 
         // âœ… apply category filter if passed
         if (!empty($categoryId)) {
@@ -734,7 +753,8 @@ class FoodItemsController extends Controller
                 "cuisine"             => $cuisines[$dish->cuisine_type_id] ?? null,
                 "is_get_now_or_get_later" => $dish->is_get_now_or_get_later,
                 "category_id" => $dish->category_id,
-                'in_stock' => $noAvailability ? 0 : $dish->in_stock
+                'in_stock' => $noAvailability ? 0 : $dish->in_stock,
+                'food_type' => $dish->food_type,
             ];
         });
 
@@ -988,6 +1008,11 @@ class FoodItemsController extends Controller
             $query->where('cuisine_type_id', $cuisineTypeId);
         }
 
+
+        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
+            $query->where('food_type', $request->query('food_type'));
+        }
+
         $foodItems = $query
             ->orderByDesc('in_stock')
             ->orderBy('id', 'desc')
@@ -1000,7 +1025,8 @@ class FoodItemsController extends Controller
                 'description',
                 'cuisine_type_id',
                 'image',
-                'in_stock'
+                'in_stock',
+                'food_type'
             ]);
 
         if ($foodItems->isEmpty()) {
@@ -1363,6 +1389,10 @@ class FoodItemsController extends Controller
             $query->where('fd.cuisine_type_id', $cuisineTypeId);
         }
 
+        if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
+            $query->where('fd.food_type', $request->query('food_type'));
+        }
+
         $query->orderBy('fd.id', 'desc');
 
         // =============================
@@ -1416,6 +1446,7 @@ class FoodItemsController extends Controller
                 "price"       => $item->price,
                 "spicy_level" => $item->spicy_level,
                 "in_stock"    => $item->in_stock,
+                "food_type"   => $item->food_type,
                 "description" => $item->description
                     ? (strlen($item->description) > 20
                         ? substr($item->description, 0, 20) . '...'
