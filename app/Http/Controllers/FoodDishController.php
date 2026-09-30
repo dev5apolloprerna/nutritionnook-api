@@ -50,7 +50,8 @@ class FoodDishController extends Controller
             // 'availability'      => 'nullable|string',
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tag_id'            => 'nullable|array',
-            'food_type'         => 'required|in:' . implode(',', FoodDish::foodTypes()),
+            'food_type'         => 'required|array|min:1',
+            'food_type.*'       => 'required|distinct|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         $data = $request->only([
@@ -60,9 +61,9 @@ class FoodDishController extends Controller
             'description',
             'ingredients',
             'allergy_warning',
-            'cuisine_type_id',
-            'food_type'
+            'cuisine_type_id'
         ]);
+        $data['food_type'] = implode(',', $request->food_type);
 
         $pricing = DishPriceCalculator::calculate(
             (float) $request->price,
@@ -121,6 +122,7 @@ class FoodDishController extends Controller
         $cuisines = CuisineType::where('status', 'active')->pluck('title', 'id');
         $tags = Tag::pluck('title', 'id');
         $selectedTags = $foodDish->tags ? explode(',', $foodDish->tags) : [];
+        $selectedFoodTypes = $foodDish->food_type ? explode(',', $foodDish->food_type) : [];
 
         // 🔹 Quantity + Unit
         $quantity = $unit = null;
@@ -148,6 +150,7 @@ class FoodDishController extends Controller
             'cuisines' => $cuisines,
             'tags' => $tags,
             'selectedTags' => $selectedTags,
+            'selectedFoodTypes' => $selectedFoodTypes,
             'quantity' => $quantity,
             'unit' => $unit,
             'prep_minutes' => $prep_minutes,
@@ -180,7 +183,8 @@ class FoodDishController extends Controller
             'allergy_warning'   => 'nullable|string',
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tag_id'            => 'nullable|array',
-            'food_type'         => 'required|in:' . implode(',', FoodDish::foodTypes()),
+            'food_type'         => 'required|array|min:1',
+            'food_type.*'       => 'required|distinct|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         $data = $request->only([
@@ -191,8 +195,8 @@ class FoodDishController extends Controller
             'ingredients',
             'allergy_warning',
             'cuisine_type_id',
-            'food_type'
         ]);
+        $data['food_type'] = implode(',', $request->food_type);
 
         $pricing = DishPriceCalculator::calculate(
             (float) $request->price,

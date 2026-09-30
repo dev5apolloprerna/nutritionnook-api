@@ -83,7 +83,8 @@ class FoodItemsController extends Controller
             'cuisine_type_id' => 'required|exists:cuisine_type,id',
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tags' => 'required',
-            'food_type' => 'required|in:' . implode(',', FoodDish::foodTypes()),
+            'food_type' => 'required|array|min:1',
+            'food_type.*' => 'required|distinct|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         if ($validator->fails()) {
@@ -136,7 +137,7 @@ class FoodItemsController extends Controller
             'cuisine_type_id'     => $request->cuisine_type_id,
             'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
             'tags'                 => $request->tags,
-            'food_type'            => $request->food_type,
+            'food_type'            => implode(',', $request->food_type),
         ];
 
         $foodItem = \App\Models\FoodItem::create($data);
@@ -179,7 +180,8 @@ class FoodItemsController extends Controller
             'is_get_now_or_get_later' => 'required|in:get_now,get_later,both',
             'tags'              => 'required',
             'image'             => 'nullable|image',
-            'food_type'         => 'required|in:' . implode(',', FoodDish::foodTypes()),
+            'food_type'         => 'required|array|min:1',
+            'food_type.*'       => 'required|distinct|in:' . implode(',', FoodDish::foodTypes()),
         ]);
 
         if ($validator->fails()) {
@@ -241,7 +243,7 @@ class FoodItemsController extends Controller
             'cuisine_type_id'    => $request->cuisine_type_id,
             'is_get_now_or_get_later' => $request->is_get_now_or_get_later,
             'tags'                => $request->tags,
-            'food_type'           => $request->food_type,
+            'food_type'           => implode(',', $request->food_type),
         ];
 
         // âœ… Only update image if new one is uploaded
@@ -369,7 +371,7 @@ class FoodItemsController extends Controller
             ->where('fd.chef_id', $user->id);
 
         if (in_array($foodType, FoodDish::foodTypes(), true)) {
-            $query->where('fd.food_type', $foodType);
+            $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$foodType]);
         }
 
         // ✅ Search filter
@@ -576,7 +578,7 @@ class FoodItemsController extends Controller
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
 
         if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->where('f.food_type', $request->query('food_type'));
+            $query->whereRaw("FIND_IN_SET(?, REPLACE(f.food_type, ' ', ''))", [$request->query('food_type')]);
         }
 
         if (!empty($categoryId)) {
@@ -718,7 +720,7 @@ class FoodItemsController extends Controller
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_LATER));
 
         if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->where('f.food_type', $request->query('food_type'));
+            $query->whereRaw("FIND_IN_SET(?, REPLACE(f.food_type, ' ', ''))", [$request->query('food_type')]);
         }
 
         // âœ… apply category filter if passed
@@ -1010,7 +1012,7 @@ class FoodItemsController extends Controller
 
 
         if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->where('food_type', $request->query('food_type'));
+            $query->whereRaw("FIND_IN_SET(?, REPLACE(food_type, ' ', ''))", [$request->query('food_type')]);
         }
 
         $foodItems = $query
@@ -1390,7 +1392,7 @@ class FoodItemsController extends Controller
         }
 
         if (in_array($request->query('food_type'), FoodDish::foodTypes(), true)) {
-            $query->where('fd.food_type', $request->query('food_type'));
+            $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$request->query('food_type')]);
         }
 
         $query->orderBy('fd.id', 'desc');

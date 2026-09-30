@@ -3651,7 +3651,7 @@ class ApiController extends Controller
                 DB::raw("GROUP_CONCAT(cat.title SEPARATOR ', ') as category_names") // тЬЕ multiple categories
             )
             ->when(in_array($request->query('food_type'), FoodDish::foodTypes(), true), function ($query) use ($request) {
-                $query->where('fd.food_type', $request->query('food_type'));
+                $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$request->query('food_type')]);
             })
             ->groupBy('fd.id', 'fd.name', 'fd.description', 'fd.food_type', 'fd.image', 'ch.name')
             ->get();
@@ -3701,7 +3701,7 @@ class ApiController extends Controller
             ->join('chefs as c', 'fd.chef_id', '=', 'c.id');
         
         if (in_array($foodType, FoodDish::foodTypes(), true)) {
-            $globalDishQuery->where('fd.food_type', $foodType);
+            $globalDishQuery->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$foodType]);
         }
 
         if (!empty($search)) {
@@ -3746,7 +3746,7 @@ class ApiController extends Controller
             ->having('distance', '<=', $radius);
         
         if (in_array($foodType, FoodDish::foodTypes(), true)) {
-            $query->where('fd.food_type', $foodType);
+            $query->whereRaw("FIND_IN_SET(?, REPLACE(fd.food_type, ' ', ''))", [$foodType]);
         }
         
         if (!empty($search)) {

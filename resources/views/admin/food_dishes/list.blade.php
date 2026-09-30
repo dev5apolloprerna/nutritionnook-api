@@ -52,7 +52,11 @@
                                             <label class="badge badge-secondary">—</label>
                                         @endif
                                     </td>
-                                    <td><label class="badge badge-info">{{ ucfirst($dish->food_type) }}</label></td>
+                                    <td>
+                                        @foreach (explode(',', $dish->food_type) as $foodType)
+                                            <label class="badge badge-info">{{ ucfirst($foodType) }}</label>
+                                        @endforeach
+                                    </td>
                                     <td>₹{{ number_format($dish->price, 2) }}</td>
                                     <td>
                                         @if ($dish->spicy_level)

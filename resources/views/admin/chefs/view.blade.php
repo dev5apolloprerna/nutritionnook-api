@@ -1630,7 +1630,11 @@
                         <span class="badge bg-secondary">—</span>
                         @endforelse
                     </td>
-                    <td><span class="badge bg-primary">{{ ucfirst($item->food_type) }}</span></td>
+                    <td>
+                        @foreach (explode(',', $item->food_type) as $foodType)
+                        <span class="badge bg-primary">{{ ucfirst($foodType) }}</span>
+                        @endforeach
+                    </td>
                     <td class="text-center align-middle">
                         <div class="form-check form-switch d-flex justify-content-center align-items-center m-0" style="height: 100%;">
                             <input class="form-check-input toggle-recommended" type="checkbox"

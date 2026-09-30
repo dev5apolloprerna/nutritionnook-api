@@ -59,8 +59,7 @@ class FoodDish extends Model
             default => [],
         };
     }
-    
-    
+
     /**
      * Food types supported by the chef, admin, and customer applications.
      */

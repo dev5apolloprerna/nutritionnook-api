@@ -47,10 +47,12 @@
                     {{-- Spicy Level --}}
                     <div class="form-group col-md-6">
                         <label>Food Type <span class="text-danger">*</span></label>
-                        <select name="food_type" class="form-select form-control @error('food_type') is-invalid @enderror" required>
+                        <select name="food_type[]"
+                            class="form-select form-control js-example-basic-multiple @error('food_type') is-invalid @enderror"
+                            data-placeholder="Select food types" multiple="multiple" required>
                             @foreach (\App\Models\FoodDish::foodTypes() as $foodType)
                                 <option value="{{ $foodType }}"
-                                    {{ old('food_type', $dish->food_type ?? \App\Models\FoodDish::FOOD_TYPE_REGULAR) === $foodType ? 'selected' : '' }}>
+                                    {{ in_array($foodType, old('food_type', $selectedFoodTypes ?? [\App\Models\FoodDish::FOOD_TYPE_REGULAR]), true) ? 'selected' : '' }}>
                                     {{ ucfirst($foodType) }}
                                 </option>
                             @endforeach
@@ -146,7 +148,8 @@
                     {{-- Preference Tags --}}
                     <div class="form-group col-md-6">
                         <label>Preference Tags</label>
-                        <select class="form-select js-example-basic-multiple" name="tag_id[]" multiple="multiple">
+                        <select class="form-select js-example-basic-multiple" name="tag_id[]"
+                            data-placeholder="Select preference tags" multiple="multiple">
                             @foreach ($tags as $id => $title)
                                 <option value="{{ $id }}"
                                     {{ isset($selectedTags) && in_array($id, $selectedTags) ? 'selected' : '' }}>
@@ -201,7 +204,7 @@
                     <div class="form-group col-md-6">
                         <label>Categories<span class="text-danger">*</span></label>
                         <select class="form-select form-control js-example-basic-multiple" name="category_id[]"
-                            multiple="multiple">
+                            data-placeholder="Select categories" multiple="multiple">
                             @foreach ($categories as $id => $title)
                                 <option value="{{ $id }}"
                                     {{ isset($selectedCategories) && in_array($id, $selectedCategories) ? 'selected' : '' }}>
@@ -298,7 +301,9 @@
         $(document).ready(function() {
             $('.js-example-basic-multiple').select2({
                 width: '100%',
-                placeholder: 'Select categories'
+                 placeholder: function() {
+                    return $(this).data('placeholder') || 'Select options';
+                }
             });
         });
     </script>
