@@ -1086,68 +1086,60 @@ class ApiController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $chef = auth()->user(); // logged in chef
+        $chef = auth()->user();
 
-
-        if (empty($chef)) {
+        if (!$chef instanceof Chef) {
             return CommonHelper::apiResponse(401, false, 'Unauthorized access', []);
         }
 
         $validator = Validator::make($request->all(), [
-            'name'            => 'sometimes|string|max:255',
-            'business_name'   => 'sometimes|string|max:255',
-            'email'           => 'sometimes|email|unique:chefs,email,' . $chef->id,
-            'phone_number'    => 'sometimes|max:15|unique:chefs,phone_number,' . $chef->id,
-            'dob'             => 'sometimes|date',
-            'gender'          => 'sometimes|in:male,female,other',
-            'kitchen_name'    => 'sometimes|string|max:255',
-            'address'         => 'sometimes|string',
-            'about_chef '     => 'sometimes|string',
-            'city '     => 'sometimes|string',
-            'opening_time'    => 'sometimes|string',
-            'closing_time'    => 'sometimes|string',
-
-            // new fields
-            'shop_plot_number' => 'sometimes|max:255',
-            'pincode' => 'sometimes|max:255',
-            'floor'           => 'sometimes|string|max:50',
-            'commission'           => 'sometimes|max:50',
-            'building_name'   => 'sometimes|string|max:255',
-            'latitude'        => 'sometimes|numeric|between:-90,90',
-            'longitude'       => 'sometimes|numeric|between:-180,180',
-            'working_days'    => 'sometimes|array', // e.g. ["monday","tuesday"]
+            'name' => 'sometimes|nullable|string|max:255',
+            'business_name' => 'sometimes|nullable|string|max:255',
+            'email' => 'sometimes|nullable|email|max:255|unique:chefs,email,' . $chef->id,
+            'phone_number' => 'sometimes|nullable|string|max:15|unique:chefs,phone_number,' . $chef->id,
+            'dob' => 'sometimes|nullable|date',
+            'gender' => 'sometimes|nullable|in:male,female,other',
+            'about_chef' => 'sometimes|nullable|string',
+            'kitchen_name' => 'sometimes|nullable|string|max:255',
+            'shop_plot_number' => 'sometimes|nullable|string|max:255',
+            'floor' => 'sometimes|nullable|string|max:50',
+            'building_name' => 'sometimes|nullable|string|max:255',
+            'city' => 'sometimes|nullable|string|max:255',
+            'pincode' => 'sometimes|nullable|digits:6',
+            'address' => 'sometimes|nullable|string',
+            'latitude' => 'sometimes|nullable|numeric|between:-90,90',
+            'longitude' => 'sometimes|nullable|numeric|between:-180,180',
+            'delivery_radius' => 'sometimes|nullable|numeric|min:0',
+            'fssai_license_number' => 'sometimes|nullable|string|size:14',
+            'fssai_validity_date' => 'sometimes|nullable|date',
+            'opening_time' => 'sometimes|nullable|date_format:H:i',
+            'closing_time' => 'sometimes|nullable|date_format:H:i',
+            'working_days' => 'sometimes|nullable|array',
             'working_days.*'  => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
 
-            'cover_image'     => 'sometimes|image|mimes:jpeg,png,jpg,gif',
-            'profile_image'   => 'sometimes|image|mimes:jpeg,png,jpg,gif',
-            'is_pre_order' => 'sometimes|in:0,1,true,false'
+            'cuisine_speciality' => 'sometimes|nullable|string|max:255',
+            'preference_tags' => 'sometimes|nullable|array',
+            'preference_tags.*' => 'string|max:100',
+            'personal_document_type' => 'sometimes|nullable|in:aadhar_card,pan_card,driving_license',
+            'chef_training' => 'sometimes|nullable|date',
+            'onboarding_kit_receipt' => 'sometimes|nullable|date',
+            'commission' => 'sometimes|nullable|numeric|between:0,100',
+            'is_pre_order' => 'sometimes|boolean',
+            'cover_image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'profile_image' => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'kitchen_assessment_photographs' => 'sometimes|array',
+            'kitchen_assessment_photographs.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'personal_documents' => 'sometimes|array',
+            'personal_documents.*' => 'file|mimes:jpeg,png,jpg,pdf|max:10240',
+            'fscai_certificate' => 'sometimes|array',
+            'fscai_certificate.*' => 'file|mimes:jpeg,png,jpg,pdf|max:10240',
+            'self_declaration' => 'sometimes|array',
+            'self_declaration.*' => 'file|mimes:jpeg,png,jpg,pdf|max:10240',
         ]);
 
         if ($validator->fails()) {
             return CommonHelper::apiResponse(422, false, $validator->errors()->first(), []);
         }
-
-
-        // $chef->update($request->only([
-        //     'name',
-        //     'business_name',
-        //     'email',
-        //     'phone_number',
-        //     'dob',
-        //     'gender',
-        //     'kitchen_name',
-        //     'address',
-        //     'about_chef',
-        //     'city',
-        //     'opening_time',
-        //     'closing_time',
-        //     'shop_plot_number',
-        //     'floor',
-        //     'building_name',
-        //     'latitude',
-        //     'longitude',
-        //     'working_days',
-        // ]));
 
         $data = $request->only([
             'name',
@@ -1168,18 +1160,27 @@ class ApiController extends Controller
             'latitude',
             'longitude',
             'working_days',
+            'cuisine_speciality',
+            'personal_document_type',
+            'fssai_license_number',
+            'fssai_validity_date',
+            'chef_training',
+            'onboarding_kit_receipt',
+            'delivery_radius',
             'is_pre_order',
             'pincode',
             'commission'
         ]);
 
-        // тЬЕ Handle cover image upload
+        if ($request->has('preference_tags')) {
+            $data['preference_tags'] = json_encode($request->input('preference_tags') ?? []);
+        }
+
         if ($request->hasFile('cover_image')) {
             $image      = $request->file('cover_image');
             $imageName  = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('images'), $imageName);
 
-            // path store hoga "public/images/filename.ext"
             $data['cover_image'] = 'public/images/' . $imageName;
         }
 
@@ -1188,39 +1189,45 @@ class ApiController extends Controller
             $imageName  = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move(public_path('images'), $imageName);
 
-            // path store hoga "public/images/filename.ext"
             $data['profile_image'] = 'public/images/' . $imageName;
         }
 
-        if (!empty($data['opening_time'])) {
-            try {
-                $data['opening_time'] = \Carbon\Carbon::parse($data['opening_time'])->format('h:i A');
-            } catch (\Exception $e) {
+        foreach ([
+            'kitchen_assessment_photographs' => ['images/kitchen_photos', 'kitchen'],
+            'personal_documents' => ['documents', 'personal'],
+            'fscai_certificate' => ['documents', 'fscai'],
+            'self_declaration' => ['documents', 'self'],
+        ] as $field => [$directory, $prefix]) {
+            if (!$request->hasFile($field)) {
+                continue;
             }
+            $existingFiles = $chef->documentPaths($field);
+            foreach ($request->file($field) as $file) {
+                $fileName = time() . '_' . $prefix . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path($directory), $fileName);
+                $existingFiles[] = 'public/' . $directory . '/' . $fileName;
+            }
+
+            $data[$field] = json_encode($existingFiles);
+        }
+
+        if (!empty($data['opening_time'])) {
+            $data['opening_time'] = Carbon::createFromFormat('H:i', $data['opening_time'])->format('h:i A');
         }
 
         if (!empty($data['closing_time'])) {
-            try {
-                $data['closing_time'] = \Carbon\Carbon::parse($data['closing_time'])->format('h:i A');
-            } catch (\Exception $e) {
-            }
+            $data['closing_time'] = Carbon::createFromFormat('H:i', $data['closing_time'])->format('h:i A');
         }
 
         if ($request->has('working_days')) {
             $days = $request->input('working_days');
-
-            // જો એપમાંથી working_days[0]=monday ફોર્મેટમાં ડેટા આવે 
-            // તો લારાવેલ તેને એરે ગણશે. આપણે તેને clean array બનાવીએ.
-            $cleanDays = is_array($days) ? array_values($days) : [$days];
-            $data['working_days'] = $cleanDays;
+            $data['working_days'] = is_array($days) ? array_values($days) : [];
         }
 
-        // тЬЕ Update chef
         $chef->update($data);
 
         $chef->refresh();
 
-        // тЬЕ Asset path ke sath image return karo
         if (!empty($chef->cover_image)) {
             $chef->cover_image = asset($chef->cover_image);
         }
@@ -1228,8 +1235,56 @@ class ApiController extends Controller
             $chef->profile_image = asset($chef->profile_image);
         }
 
+        // Bank details are managed by the dedicated bank-details flow and must
+        // never be editable or exposed by the general profile endpoint.
+        $chef->makeHidden([
+            'bank_name',
+            'account_holder_name',
+            'account_number',
+            'ifsc_code',
+            'pan_card',
+            'password',
+            'remember_token',
+        ]);
 
         return CommonHelper::apiResponse(200, true, 'Profile updated successfully', $chef);
+    }
+
+    public function updateBankDetails(Request $request)
+    {
+        $chef = auth()->user();
+
+        if (!$chef instanceof Chef) {
+            return CommonHelper::apiResponse(401, false, 'Unauthorized access', []);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'bank_name' => 'required|string|max:255',
+            'account_holder_name' => 'required|string|max:255',
+            'account_number' => 'required|digits_between:9,18',
+            'ifsc_code' => ['required', 'size:11', 'regex:/^[A-Z]{4}0[0-9A-Z]{6}$/'],
+            'pan_card' => ['required', 'regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/'],
+        ]);
+
+        if ($validator->fails()) {
+            return CommonHelper::apiResponse(422, false, $validator->errors()->first(), []);
+        }
+
+        $bankDetails = $validator->validated();
+        $bankDetails['bank_name'] = trim($bankDetails['bank_name']);
+        $bankDetails['account_holder_name'] = trim($bankDetails['account_holder_name']);
+        $bankDetails['ifsc_code'] = strtoupper($bankDetails['ifsc_code']);
+        $bankDetails['pan_card'] = strtoupper($bankDetails['pan_card']);
+
+        $chef->update($bankDetails);
+
+        return CommonHelper::apiResponse(200, true, 'Bank details updated successfully', [
+            'bank_name' => $chef->bank_name,
+            'account_holder_name' => $chef->account_holder_name,
+            'account_number' => $chef->account_number,
+            'ifsc_code' => $chef->ifsc_code,
+            'pan_card' => $chef->pan_card,
+        ]);
     }
 
     public function deleteAccount()

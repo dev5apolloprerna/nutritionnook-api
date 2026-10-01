@@ -16,6 +16,7 @@ class Chef extends Authenticatable
 
     protected $fillable = [
         'name',
+        'business_name',
         'email',
         'phone_number',
         'dob',

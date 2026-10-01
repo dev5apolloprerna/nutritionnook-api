@@ -155,6 +155,7 @@ Route::post('/webhooks/razorpay/refund', [RazorpayWebhookController::class, 'han
          
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chef/update-profile', [ApiController::class, 'updateProfile']);
+    Route::post('/chef/update-bank-details', [ApiController::class, 'updateBankDetails']);
     Route::get('/get-order-preparation-time/{order_id}', [ApiController::class, 'getPreparationTime']);
     Route::delete('/chef/delete-account', [ApiController::class, 'deleteAccount']);
     Route::post('save-fcm-token', [NotificationController::class, 'saveFcmToken']);
