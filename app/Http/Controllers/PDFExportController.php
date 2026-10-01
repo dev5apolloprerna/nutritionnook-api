@@ -29,7 +29,7 @@ class PDFExportController extends Controller
         switch ($model) {
             case 'customers':
                 $query = User::query()
-                    ->where('is_admin', 0); // ✅ exclude admin users
+                    ->administrativeAccounts(); // ->where('is_admin', 0); // ✅ exclude admin users
 
                 // optional filters
                 if ($request->filled('start_date')) {

@@ -33,7 +33,14 @@
                 </a>
             </li>
         @endif
-       
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Users'))
+            <li class="nav-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('users.index') }}">
+                    <span class="menu-title">Admin Users</span>
+                    <i class="mdi mdi-account-multiple menu-icon"></i>
+                </a>
+            </li>
+        @endif
         @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Categories'))
             <li class="nav-item {{ request()->routeIs('categories.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('categories.index') }}">

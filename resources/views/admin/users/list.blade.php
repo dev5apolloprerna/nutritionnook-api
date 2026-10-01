@@ -6,8 +6,10 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <h4 class="card-title mb-0">Users List</h4>
-                        <p class="card-description mb-0">List of all <code>users</code> with actions.</p>
+                        <!-- <h4 class="card-title mb-0">Users List</h4>
+                        <p class="card-description mb-0">List of all <code>users</code> with actions.</p> -->
+                        <h4 class="card-title mb-0">Admin Users</h4>
+                        <p class="card-description mb-0">Admin and Food Inspector accounts only.</p>
                     </div>
                     {{-- Add button optional, you can enable below line if needed --}}
                     <div class="d-flex align-items-center mb-3 gap-2">
@@ -19,7 +21,7 @@
                             (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
                             \App\Helpers\CommonHelper::getPermission('Users', 'create'))
                             <a href="{{ route('users.create') }}" class="btn btn-gradient-primary btn-fw">
-                                Add User
+                                Add Food Inspector
                             </a>
                         @endif
 
@@ -37,6 +39,7 @@
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Phone Number</th>
+                                <th>Role</th>
                                 <th>Status</th>
                                 @if (
                                     (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
@@ -61,6 +64,7 @@
                                     <td>{{ $user->name }}</td>
                                     <td>{{ $user->email }}</td>
                                     <td>{{ $user->phone_number }}</td>
+                                    <td>{{ (int) $user->is_admin === 1 ? 'Admin' : ($user->role->title ?? '-') }}</td>
                                      <td>
                                         <label
                                             class="badge {{ $user->status == 'active' ? 'badge-success' : 'badge-danger' }}">
@@ -73,9 +77,9 @@
                                             \App\Helpers\CommonHelper::getPermission('Users', 'delete'))
                                         <td>
                                             {{-- Optional Edit --}}
-                                            @if (
+                                            @if ((int) $user->is_admin !== 1 && (
                                                 (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
-                                                    \App\Helpers\CommonHelper::getPermission('Users', 'edit'))
+                                                    \App\Helpers\CommonHelper::getPermission('Users', 'edit')))
                                                 <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm"
                                                     title="Edit">
                                                     <i class="fa fa-edit text-primary"></i>
@@ -85,9 +89,9 @@
                                                 <i class="fa fa-eye text-primary"></i>
                                             </a>
                                             {{-- Optional Delete --}}
-                                            @if (
+                                            @if ((int) $user->is_admin !== 1 && (
                                                 (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
-                                                    \App\Helpers\CommonHelper::getPermission('Users', 'delete'))
+                                                    \App\Helpers\CommonHelper::getPermission('Users', 'delete')))
                                                 <form action="{{ route('users.destroy', $user->id) }}" method="POST"
                                                     style="display:inline;">
                                                     @csrf
@@ -103,7 +107,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center">No users found.</td>
+                                    <td colspan="8" class="text-center">No admin users or Food Inspectors found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

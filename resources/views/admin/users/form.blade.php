@@ -4,8 +4,10 @@
     <div class="col-12 grid-margin stretch-card">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">{{ isset($user) ? 'Edit User' : 'Create New User' }}</h4>
-                <p class="card-description">{{ isset($user) ? 'Update user information' : 'Enter user details' }}</p>
+                <!-- <h4 class="card-title">{{ isset($user) ? 'Edit User' : 'Create New User' }}</h4>
+                <p class="card-description">{{ isset($user) ? 'Update user information' : 'Enter user details' }}</p> -->
+                <h4 class="card-title">{{ isset($user) ? 'Edit User' : 'Create Food Inspector' }}</h4>
+                <p class="card-description">{{ isset($user) ? 'Update user information' : 'Enter the Food Inspector details' }}</p>
 
                 <form class="forms-sample row "
                     action="{{ isset($user) ? route('users.update', $user->id) : route('users.store') }}" method="POST"
@@ -173,7 +175,8 @@
                     {{-- Submit & Cancel --}}
                     <div class="form-group col-12 text-center mt-4">
                         <button type="submit" class="btn btn-gradient-primary btn-fw me-2">
-                            {{ isset($user) ? 'Update User' : 'Create User' }}
+                            <!-- {{ isset($user) ? 'Update User' : 'Create User' }} -->
+                            {{ isset($user) ? 'Update User' : 'Create Food Inspector' }}
                         </button>
                         <button type="button" class="btn btn-light"
                             onclick="window.location.href='{{ route('users.index') }}'">Cancel</button>

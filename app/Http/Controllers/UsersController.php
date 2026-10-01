@@ -4,37 +4,39 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use App\Models\UserAddress;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 class UsersController extends Controller
 {
     public function destroyAddress(UserAddress $address)
-{
-    try {
-        $address->delete();
-        return redirect()->back()->with('success', 'Address deleted successfully.');
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Failed to delete address.');
+    {
+        try {
+            $address->delete();
+            return redirect()->back()->with('success', 'Address deleted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete address.');
+        }
     }
-}
     // Show all users
     public function index()
     {
-        $users = User::where('is_admin', '!=', 1)
-            ->orderBy('id', 'desc') // latest user first
+        $users = User::query()
+            ->administrativeAccounts()
+            ->with('role')
+            ->orderByDesc('id')
             ->get();
+
         return view('admin.users.list', compact('users'));
     }
 
     public function create()
     {
-        // $roles = Role::all();
-        $roles = Role::all()->reject(function ($role) {
-            return strtolower($role->title) === 'chef' || strtolower($role->title) === 'chefs';
-        });
+        $roles = $this->assignableRoles();
 
         return view('admin.users.form', compact('roles'));
     }
@@ -50,7 +52,7 @@ class UsersController extends Controller
             'gender' => 'required|in:male,female,other,prefer not to disclose',
             'dob' => 'required|date',
             'status' => 'required|in:active,inactive',
-            'user_role' => 'required|exists:roles,id',
+            'user_role' => ['required', $this->assignableRoleRule()],
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif',
 
         ]);
@@ -89,17 +91,14 @@ class UsersController extends Controller
 
     public function edit($id)
     {
-        $user = User::findOrFail($id);
-        // $roles = Role::all();
-        $roles = Role::all()->reject(function ($role) {
-            return strtolower($role->title) === 'chef' || strtolower($role->title) === 'chefs';
-        });
+        $user = $this->findAdministrativeUserOrFail($id);
+        $roles = $this->assignableRoles();
         return view('admin.users.form', compact('user', 'roles'));
     }
 
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findAdministrativeUserOrFail($id);
 
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
@@ -110,7 +109,7 @@ class UsersController extends Controller
             'gender' => 'required|in:male,female,other,prefer not to disclose',
             'dob' => 'required|date',
             'status' => 'required|in:active,inactive',
-            'user_role' => 'required|exists:roles,id',
+            'user_role' => ['required', $this->assignableRoleRule()],
             'image'        => 'nullable|image|mimes:jpeg,png,jpg,gif',
         ]);
 
@@ -154,23 +153,46 @@ class UsersController extends Controller
     // Delete a user
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $user = $this->findAdministrativeUserOrFail($id);
         $user->delete();
 
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
-    
-public function show($id)
-{
-    $user = User::findOrFail($id);
 
-    // user ke addresses fetch karo
-    $addresses = \DB::table('user_addresses')
-        ->where('user_id', $id)
-        ->get();
+    public function show($id)
+    {
+        $user = $this->findAdministrativeUserOrFail($id);
 
-    return view('admin.users.show', compact('user', 'addresses'));
-}
+        // user ke addresses fetch karo
+        $addresses = \DB::table('user_addresses')
+            ->where('user_id', $id)
+            ->get();
 
+        return view('admin.users.show', compact('user', 'addresses'));
+    }
 
+    private function assignableRoles(): Collection
+    {
+        return Role::query()
+            ->where('status', 'active')
+            ->whereRaw('LOWER(title) = ?', ['food inspector'])
+            ->orderBy('title')
+            ->get();
+    }
+
+    private function findAdministrativeUserOrFail($id): User
+    {
+        return User::query()
+            ->administrativeAccounts()
+            ->findOrFail($id);
+    }
+
+    private function assignableRoleRule(): Exists
+    {
+        return Rule::exists('roles', 'id')->where(function ($query) {
+            $query->where('status', 'active')
+                ->whereNull('deleted_at')
+                ->whereRaw('LOWER(title) = ?', ['food inspector']);
+        });
+    }
 }

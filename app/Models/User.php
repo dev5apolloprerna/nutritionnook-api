@@ -7,7 +7,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
+use Illuminate\Database\Eloquent\Builder;
 
 
 class User extends Authenticatable
@@ -67,6 +67,16 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class, 'user_role');
+    }
+    
+    public function scopeAdministrativeAccounts(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->where('is_admin', 1)
+                ->orWhereHas('role', function (Builder $query) {
+                    $query->whereRaw('LOWER(title) = ?', ['food inspector']);
+                });
+        });
     }
     
     public function refunds()
