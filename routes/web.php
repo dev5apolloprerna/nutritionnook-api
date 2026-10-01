@@ -571,22 +571,22 @@ Route::get('/update-buffer-status', function (\Illuminate\Http\Request $request)
 
 
     // Reports Dashboard
-    Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports', [App\Http\Controllers\ReportController::class, 'index'])->middleware(['auth', 'admin.access'])->name('admin.reports.index');
     
     // Order & Revenue Reports
-    Route::get('/reports/order-revenue', [App\Http\Controllers\ReportController::class, 'orderRevenueReports'])->name('admin.reports.order-revenue');
+    Route::get('/reports/order-revenue', [App\Http\Controllers\ReportController::class, 'orderRevenueReports'])->middleware(['auth', 'admin.access'])->name('admin.reports.order-revenue');
     
     // Chef Performance Reports
-    Route::get('/reports/chef-performance', [App\Http\Controllers\ReportController::class, 'chefPerformanceReports'])->name('admin.reports.chef-performance');
+    Route::get('/reports/chef-performance', [App\Http\Controllers\ReportController::class, 'chefPerformanceReports'])->middleware(['auth', 'admin.access'])->name('admin.reports.chef-performance');
     
     // Customer Insights
-    Route::get('/reports/customer-insights', [App\Http\Controllers\ReportController::class, 'customerInsights'])->name('admin.reports.customer-insights');
+    Route::get('/reports/customer-insights', [App\Http\Controllers\ReportController::class, 'customerInsights'])->middleware(['auth', 'admin.access'])->name('admin.reports.customer-insights');
     
     // Menu & Cuisine Insights
-    Route::get('/reports/menu-cuisine', [App\Http\Controllers\ReportController::class, 'menuCuisineInsights'])->name('admin.reports.menu-cuisine');
+    Route::get('/reports/menu-cuisine', [App\Http\Controllers\ReportController::class, 'menuCuisineInsights'])->middleware(['auth', 'admin.access'])->name('admin.reports.menu-cuisine');
     
     // Platform Health
-    Route::get('/reports/platform-health', [App\Http\Controllers\ReportController::class, 'platformHealth'])->name('admin.reports.platform-health');
+    Route::get('/reports/platform-health', [App\Http\Controllers\ReportController::class, 'platformHealth'])->middleware(['auth', 'admin.access'])->name('admin.reports.platform-health');
 
 
 if (app()->environment('local')) {
@@ -864,7 +864,7 @@ Route::get('/export-issues', [ExportController::class, 'exportIssues'])->name('e
 
 Route::get('/export-active-chefs', [ExportController::class, 'exportActiveChefs'])->name('export.active.chefs');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin.access'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

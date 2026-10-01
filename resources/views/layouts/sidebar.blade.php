@@ -42,20 +42,22 @@
                 </a>
             </li>
         @endif
-        
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Tags'))
             <li class="nav-item {{ request()->routeIs('tags.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('tags.index') }}">
                     <span class="menu-title">Tags</span>
                     <i class="mdi mdi-view-grid menu-icon"></i>
                 </a>
             </li>
+        @endif
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Allergies'))
             <li class="nav-item {{ request()->routeIs('allergies.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('allergies.index') }}">
                     <span class="menu-title">Allergy</span>
                     <i class="mdi mdi-view-grid menu-icon"></i>
                 </a>
             </li>
-
+        @endif
         <!--<li class="nav-item">-->
         <!--        <a class="nav-link" href="{{ route('restaurants.index') }}">-->
         <!--            <span class="menu-title">Resturant Type</span>-->
@@ -144,12 +146,14 @@
                 </a>
             </li>
         @endif
-         <li class="nav-item {{ request()->routeIs('homescreen.*') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('homescreen.index') }}">
-                    <span class="menu-title">Home Screen(Customer)</span>
-                    <i class="mdi mdi-ticket-percent menu-icon"></i>
-                </a>
-         </li>
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Home Screen'))
+            <li class="nav-item {{ request()->routeIs('homescreen.*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('homescreen.index') }}">
+                        <span class="menu-title">Home Screen(Customer)</span>
+                        <i class="mdi mdi-ticket-percent menu-icon"></i>
+                    </a>
+            </li>
+        @endif
         @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Pages'))
             <li class="nav-item {{ request()->routeIs('pages.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('pages.index') }}">
@@ -157,33 +161,39 @@
                     <i class="mdi mdi-food menu-icon"></i>
                 </a>
             </li>
-            @endif
+        @endif
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Payouts'))
             <li class="nav-item {{ request()->routeIs('admin.payouts.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('payouts/create') }}">
                     <span class="menu-title">Payout</span>
                     <i class="mdi mdi-account-box menu-icon"></i>
                 </a>
             </li>
-            
+        @endif
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Notifications'))
             <li class="nav-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('notifications/create') }}">
                     <span class="menu-title">Admin Notification</span>
                     <i class="mdi mdi-account-box menu-icon"></i>
                 </a>
             </li>
+        @endif
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Reports'))
             <li class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('reports') }}">
                     <span class="menu-title">Reports</span>
                     <i class="mdi mdi-account-box menu-icon"></i>
                 </a>
             </li>
-            
+        @endif
+        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::hasAnyPermission('Issues'))
             <li class="nav-item {{ request()->routeIs('issues.*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('issues') }}">
                     <span class="menu-title">Issue/Complaint</span>
                     <i class="mdi mdi-account-box menu-icon"></i>
                 </a>
             </li>
+        @endif
          {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('radius.index') }}">
                     <span class="menu-title">Radius Setting</span>

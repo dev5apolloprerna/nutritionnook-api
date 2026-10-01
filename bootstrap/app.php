@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi();
+        $middleware->alias([
+            'module.permission' => \App\Http\Middleware\EnsureModulePermission::class,
+            'admin.access' => \App\Http\Middleware\EnsureModulePermission::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

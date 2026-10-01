@@ -63,7 +63,10 @@
                         {{-- <a href="{{ route('pdf.export', 'chefs') }}" class="btn btn-sm btn-primary">
                             <i class="fa fa-file-pdf-o"></i> Export PDF
                         </a> --}}
-                        <a href="{{ route('chefs.create') }}" class="btn btn-primary">+ on board chef</a>
+                        <!-- <a href="{{ route('chefs.create') }}" class="btn btn-primary">+ on board chef</a> -->
+                        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::getPermission('Chefs', 'create'))
+                            <a href="{{ route('chefs.create') }}" class="btn btn-primary">+ on board chef</a>
+                        @endif
                         
                         <a href="{{ route('export.chefs') }}" class="btn btn-gradient-primary btn-fw">Export Excel</a>
                     </div>
@@ -155,6 +158,7 @@
                                             title="View">
                                             <i class="fas fa-eye text-primary"></i>
                                         </a>
+                                        @if (auth()->user()->is_admin == 1 || \App\Helpers\CommonHelper::getPermission('Chefs', 'delete'))
                                         <form action="{{ route('chefs.destroy', $chef->id) }}" method="POST"
                                             style="display:inline;">
                                             @csrf
@@ -164,6 +168,7 @@
                                                 <i class="fas fa-trash text-danger"></i>
                                             </button>
                                         </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
