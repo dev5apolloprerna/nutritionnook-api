@@ -13,10 +13,6 @@
                     </div>
                     {{-- Add button optional, you can enable below line if needed --}}
                     <div class="d-flex align-items-center mb-3 gap-2">
-                         <a href="{{ route('pdf.export', ['model' => 'users']) }}" 
-                        class="btn btn-sm btn-primary d-flex align-items-center">
-                            <i class="fa fa-file-pdf-o me-2"></i> Export PDF
-                        </a>
                         @if (
                             (isset(auth()->user()->is_admin) && auth()->user()->is_admin == 1) ||
                             \App\Helpers\CommonHelper::getPermission('Users', 'create'))
@@ -24,6 +20,10 @@
                                 Add Food Inspector
                             </a>
                         @endif
+                         <a href="{{ route('pdf.export', ['model' => 'users']) }}" 
+                        class="btn btn-sm btn-primary d-flex align-items-center">
+                            <i class="fa fa-file-pdf-o me-2"></i> Export PDF
+                        </a>
 
                        
                     </div>
