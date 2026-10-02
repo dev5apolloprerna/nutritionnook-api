@@ -1135,6 +1135,11 @@ class ApiController extends Controller
             'fscai_certificate.*' => 'file|mimes:jpeg,png,jpg,pdf|max:10240',
             'self_declaration' => 'sometimes|array',
             'self_declaration.*' => 'file|mimes:jpeg,png,jpg,pdf|max:10240',
+            'bank_name' => 'sometimes|nullable|string|max:255',
+            'account_holder_name' => 'sometimes|nullable|string|max:255',
+            'account_number' => 'sometimes|nullable|digits_between:9,18',
+            'ifsc_code' => ['sometimes', 'nullable', 'size:11', 'regex:/^[A-Za-z]{4}0[0-9A-Za-z]{6}$/'],
+            'pan_card' => ['sometimes', 'nullable', 'regex:/^[A-Za-z]{5}[0-9]{4}[A-Za-z]$/'],
         ]);
 
         if ($validator->fails()) {
@@ -1169,8 +1174,25 @@ class ApiController extends Controller
             'delivery_radius',
             'is_pre_order',
             'pincode',
-            'commission'
+            'commission',
+            'bank_name',
+            'account_holder_name',
+            'account_number',
+            'ifsc_code',
+            'pan_card'
         ]);
+
+        foreach (['bank_name', 'account_holder_name'] as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = trim($data[$field]);
+            }
+        }
+
+        foreach (['ifsc_code', 'pan_card'] as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = strtoupper($data[$field]);
+            }
+        }
 
         if ($request->has('preference_tags')) {
             $data['preference_tags'] = json_encode($request->input('preference_tags') ?? []);
@@ -1235,14 +1257,7 @@ class ApiController extends Controller
             $chef->profile_image = asset($chef->profile_image);
         }
 
-        // Bank details are managed by the dedicated bank-details flow and must
-        // never be editable or exposed by the general profile endpoint.
         $chef->makeHidden([
-            'bank_name',
-            'account_holder_name',
-            'account_number',
-            'ifsc_code',
-            'pan_card',
             'password',
             'remember_token',
         ]);
