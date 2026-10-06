@@ -212,6 +212,23 @@ class OrderManagementController extends Controller
     //     return view('admin.orders.show', compact('order', 'id'));
     // }
 
+public function refundItems(Request $request, \App\Services\ItemRefundService $service)
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'item_indexes' => ['required', 'array', 'min:1'],
+            'item_indexes.*' => ['required', 'integer', 'min:0', 'distinct'],
+        ]);
+        try {
+            $refund = $service->refund(Order::findOrFail($data['order_id']), array_map('intval', $data['item_indexes']));
+            return response()->json(['success' => true, 'message' => 'Selected item refund '.$refund->status.'.', 'refund_amount' => $refund->refund_amount, 'refund_id' => $refund->id]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 502);
+        }
+    }
+
     public function refund(Request $request)
     {
 
@@ -223,6 +240,10 @@ class OrderManagementController extends Controller
 
 
         try {
+
+            if ($order->refunds()->where('status', '!=', 'failed')->exists()) {
+                throw new \RuntimeException('A refund is already pending or completed. Use product-wise refunds for remaining items.');
+            }
 
             // ── Step 1: Force 100% refund ────────────────────────────
             $refundPercentage = 100;
@@ -400,7 +421,16 @@ class OrderManagementController extends Controller
             ];
         });
 
-        return view('admin.orders.show', compact('order', 'items', 'subtotal', 'platformFee', 'total', 'payment', 'customer', 'deliveryBoy', 'gstAmount', 'gstSetting', 'tracking', 'selectedAddress'));
+        $itemRefundError = null;
+        try {
+            $itemRefundLines = app(\App\Services\ItemRefundService::class)->lines($order);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $itemRefundLines = [];
+            $itemRefundError = collect($e->errors())->flatten()->first();
+        }
+        $itemRefundHistory = $order->refunds()->where('refund_type', 'items')->latest()->get();
+
+        return view('admin.orders.show', compact('itemRefundError', 'itemRefundLines', 'itemRefundHistory', 'order', 'items', 'subtotal', 'platformFee', 'total', 'payment', 'customer', 'deliveryBoy', 'gstAmount', 'gstSetting', 'tracking', 'selectedAddress'));
     }
 
     private function calculateRefund(object $order, int $isPreOrder): array

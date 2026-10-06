@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\RefundService;
 use App\Services\FCMService;
 use App\Services\ChefPayoutService;
+use App\Support\DatabaseDate;
 use App\Models\HomeScreen;
 use Razorpay\Api\Api;
 use App\Models\Order;
@@ -1118,8 +1119,8 @@ class ApiController extends Controller
             'working_days.*'  => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
 
             'cuisine_speciality' => 'sometimes|nullable|string|max:255',
-            'preference_tags' => 'sometimes|nullable|array',
-            'preference_tags.*' => 'string|max:100',
+            // 'preference_tags' => 'sometimes|nullable|array',
+            // 'preference_tags.*' => 'string|max:100',
             'personal_document_type' => 'sometimes|nullable|in:aadhar_card,pan_card,driving_license',
             'chef_training' => 'sometimes|nullable|date',
             'onboarding_kit_receipt' => 'sometimes|nullable|date',

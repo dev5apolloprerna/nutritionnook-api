@@ -98,6 +98,8 @@ Route::get('/list-category', [MasterController::class, 'listCategory']);
 // Route::post('/delete-cuisine-type', [MasterController::class, 'deleteCuisineType']);
 
 Route::get('/list-tags', [MasterController::class, 'listTags']);
+Route::get('/list-chef-documents', [MasterController::class, 'listChefDocuments']);
+Route::get('/list-dietary-preference-tags', [MasterController::class, 'listDietaryPreferenceTags']);
 Route::get('/list-preparation-times', [FoodItemsController::class, 'listPreparationTimes']);
 
 Route::get('/available-dates', [MasterController::class, 'getAvailableDates']);

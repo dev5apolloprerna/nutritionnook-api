@@ -986,6 +986,7 @@ Route::prefix('allergies')->name('allergies.')->group(function () {
     Route::post('/razorpay/webhook', [OrderManagementController::class, 'handle']);
     Route::get('/orders', [OrderManagementController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderManagementController::class, 'show'])->name('orders.show');
+    Route::post('/orders/refund-items', [OrderManagementController::class, 'refundItems'])->name('orders.refundItems');
     Route::post('/orders/refund', [OrderManagementController::class, 'refund'])
     ->name('orders.refund');
     Route::post('/orders/update-status-management', [OrderManagementController::class, 'updateStatusOrderManagement'])

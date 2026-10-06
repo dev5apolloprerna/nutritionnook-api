@@ -270,11 +270,12 @@
                             <label>Dietary & Preference Tags</label>
                             <select name="preference_tags[]" class="form-select form-control js-example-basic-multiple" multiple="multiple">
                                 @php
-                                    $dietaryOptions = [
+                                    <!-- $dietaryOptions = [
                                         'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 
                                         'halal', 'kosher', 'low-carb', 'keto', 'paleo', 'organic',
                                         'sugar-free', 'egg-free', 'soy-free', 'pescatarian'
-                                    ];
+                                    ]; -->
+                                    $dietaryOptions = config('chef_profile.dietary_preference_tags', []);
                                     
                                     // Handle preference tags - check old input first, then existing value
                                     $preferenceTagsValue = old('preference_tags');
@@ -286,9 +287,9 @@
                                     }
                                 @endphp
                                
-                                @foreach($dietaryOptions as $option)
-                                    <option value="{{ $option }}" {{ in_array($option, $preferenceTagsValue) ? 'selected' : '' }}>
-                                        {{ ucfirst(str_replace('-', ' ', $option)) }}
+                                @foreach($dietaryOptions as $key => $value)
+                                    <option value="{{ $key }}" {{ in_array($key, $preferenceTagsValue) ? 'selected' : '' }}>
+                                        {{ $value }}
                                     </option>
                                 @endforeach
                             </select>
@@ -391,9 +392,9 @@
                         
                             <select name="personal_document_type" class="form-select mb-2">
                                 <option value="">-- Select Document Type --</option>
-                                <option value="aadhar_card" {{ old('personal_document_type', $chef->personal_document_type ?? '') == 'aadhar_card' ? 'selected' : '' }}>Aadhar Card</option>
-                                <option value="pan_card" {{ old('personal_document_type', $chef->personal_document_type ?? '') == 'pan_card' ? 'selected' : '' }}>PAN Card</option>
-                                <option value="driving_license" {{ old('personal_document_type', $chef->personal_document_type ?? '') == 'driving_license' ? 'selected' : '' }}>Driving License</option>
+                                @foreach(config('chef_profile.document_types', []) as $key => $value)
+                                    <option value="{{ $key }}" {{ old('personal_document_type', $chef->personal_document_type ?? '') == $key ? 'selected' : '' }}>{{ $value }}</option>
+                                @endforeach
                             </select>
                         
                             <input type="file" name="personal_documents[]" class="form-control mb-3" accept=".jpg,.jpeg,.png,.pdf" multiple>

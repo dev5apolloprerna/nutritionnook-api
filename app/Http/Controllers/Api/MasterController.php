@@ -269,6 +269,37 @@ public function listTags()
     return CommonHelper::apiResponse(200, true, 'Tags found!', $data);
 }
 
+public function listChefDocuments()
+{
+    return CommonHelper::apiResponse(
+        200,
+        true,
+        'Chef document types found!',
+        $this->keyValueOptions(config('chef_profile.document_types', []))
+    );
+}
+
+public function listDietaryPreferenceTags()
+{
+    return CommonHelper::apiResponse(
+        200,
+        true,
+        'Dietary and preference tags found!',
+        $this->keyValueOptions(config('chef_profile.dietary_preference_tags', []))
+    );
+}
+
+private function keyValueOptions(array $options): array
+{
+    return collect($options)
+        ->map(fn (string $value, string $key) => [
+            'key' => $key,
+            'value' => $value,
+        ])
+        ->values()
+        ->all();
+}
+
     // public function editCuisineType(Request $request)
     // {
     //     // Validate request data
