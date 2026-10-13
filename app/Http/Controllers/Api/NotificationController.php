@@ -24,9 +24,10 @@ class NotificationController extends Controller
         $request->validate([
             'chef_id' => 'required',
             'order_id' => 'required',
-            'customer_name' => 'required',
+        //     'customer_name' => 'required',
         ]);
-
+        $customer_name = auth()->user()->name ?? 'Customer'; // Get the authenticated user's name or default to 'Customer'
+        $request->customer_name = $request->customer_name ?? $customer_name; // Default value if not provided
         $title = 'New Order Received 🍽️';
         $body = "You have a new order from {$request->customer_name}";
         $data = [

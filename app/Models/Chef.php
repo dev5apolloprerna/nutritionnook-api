@@ -190,7 +190,7 @@ class Chef extends Authenticatable
             ->whereDate('date', Carbon::today())
             ->where('status', 'new')
             ->where('payment_status', 'received')
-            ->where('is_buffer', '1')
+            //->where('is_buffer', '1')
             ->count();
     }
 

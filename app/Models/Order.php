@@ -27,7 +27,8 @@ class Order extends Model
         'discount_amount',
         'security_deposit',
         'is_payout_completed',
-        'payout_id'
+        'payout_id',
+        'is_hide'
     ];
 
     protected $casts = [

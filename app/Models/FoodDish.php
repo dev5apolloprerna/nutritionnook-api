@@ -12,9 +12,9 @@ class FoodDish extends Model
     public const GET_NOW = 'get_now';
     public const GET_LATER = 'get_later';
     public const BOTH = 'both';
+    public const FOOD_TYPE_REGULAR = 'regular';
     public const FOOD_TYPE_JAIN = 'jain';
     public const FOOD_TYPE_SWAMINARAYAN = 'swaminarayan';
-    public const FOOD_TYPE_REGULAR = 'regular';
 
     protected $table = 'food_dishes';
 
@@ -66,9 +66,9 @@ class FoodDish extends Model
     public static function foodTypes(): array
     {
         return [
+            self::FOOD_TYPE_REGULAR,
             self::FOOD_TYPE_JAIN,
             self::FOOD_TYPE_SWAMINARAYAN,
-            self::FOOD_TYPE_REGULAR,
         ];
     }
     
@@ -139,7 +139,7 @@ class FoodDish extends Model
     public static function applyFoodTypeFilter($query, mixed $foodTypes, string $column = 'food_type')
     {
         $foodTypes = self::normalizeFoodTypes($foodTypes);
-
+        $foodTypes ??= self::FOOD_TYPE_REGULAR;
         if (!empty($foodTypes)) {
             $query->where(function ($query) use ($foodTypes, $column) {
                 foreach ($foodTypes as $foodType) {

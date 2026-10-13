@@ -34,12 +34,24 @@ class FoodItemsController extends Controller
             'label' => $minutes . ' minutes',
         ]);
 
-        return CommonHelper::apiResponse(
+        $foodTypes = collect(FoodDish::foodTypes())->map(fn (string $type) => [
+            'value' => $type,
+            'label' => ucfirst($type),
+        ]);
+
+        $response = CommonHelper::apiResponse(
             200,
             true,
             'Preparation times fetched successfully!',
             $preparationTimes
         );
+
+        // Keep the existing data array compatible with current app clients.
+        $response->setData(array_merge($response->getData(true), [
+            'food_types' => $foodTypes,
+        ]));
+
+        return $response;
     }
     
     public function listFoodItems()
@@ -492,7 +504,7 @@ class FoodItemsController extends Controller
 
         return response()->json($response, $code);
     }
-    public function getTodayDishes(Request $request, $chefId)
+    public function  (Request $request, $chefId)
     {
         if ($response = $this->invalidFoodTypeResponse($request)) {
             return $response;
@@ -585,7 +597,7 @@ class FoodItemsController extends Controller
             // ->where('f.tags',$tagId)
             ->whereIn('f.is_get_now_or_get_later', FoodDish::availabilityTypesFor(FoodDish::GET_NOW));
 
-        FoodDish::applyFoodTypeFilter($query, $request->query('food_type'), 'f.food_type');
+        FoodDish::applyFoodTypeFilter($food_type, $food_type, 'f.food_type');
 
         if (!empty($categoryId)) {
             $query->whereRaw('FIND_IN_SET(?, f.category_id)', [$categoryId]);

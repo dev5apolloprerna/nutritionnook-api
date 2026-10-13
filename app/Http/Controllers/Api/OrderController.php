@@ -227,6 +227,7 @@ class OrderController extends Controller
                             'preparation_time_id' => $order->status === 'preparing'
                                 ? $dish->preparation_time_id
                                 : null,
+                            'food_type'        => $item['food_type'] ?? '',
                         ];
                     }
                 }
@@ -405,6 +406,7 @@ class OrderController extends Controller
                             'total_price' => $total_price,
                             'image'       => $dish->image ? asset($dish->image) : null,
                             'preparation_time_id' => null,
+                            'food_type'        => $item['food_type'] ?? '',
                         ];
                     }
                 }
@@ -609,6 +611,7 @@ class OrderController extends Controller
                         $order->status === 'preparing'
                             ? $dish->preparation_time_id
                             : null,
+                        'food_type'        => $item['food_type'] ?? '',
                     ];
                 }
             }

@@ -29,52 +29,8 @@
             <p>Hi <strong>{{ $customerName }}</strong>,</p>
             <p>Good news! Your order <strong>#{{ $orderId }}</strong> has been delivered successfully.</p>
             
-            <h3>Order Summary:</h3>
             <table class="order-details">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th class="text-right">Qty</th>
-                        <th class="text-right">Price</th>
-                    </tr>
-                </thead>
                 <tbody>
-                    @foreach($items as $item)
-                    <tr>
-                        <td>{{ $item['name'] ?? 'Food Item' }}</td>
-                        <td class="text-right">{{ $item['quantity'] ?? 1 }}</td>
-                        <td class="text-right">₹{{ number_format($item['total'] ?? ($item['price'] * ($item['quantity'] ?? 1)), 2) }}</td>
-                    </tr>
-                    @endforeach
-
-                    <!-- Subtotal -->
-                    <tr>
-                        <td colspan="2" class="text-right" style="padding-top: 15px;">Subtotal:</td>
-                        <td class="text-right" style="padding-top: 15px;">₹{{ number_format($subtotal, 2) }}</td>
-                    </tr>
-
-                    <!-- Platform Fee -->
-                    @if($platformFee > 0)
-                    <tr>
-                        <td colspan="2" class="text-right">Platform Fee:</td>
-                        <td class="text-right">₹{{ number_format($platformFee, 2) }}</td>
-                    </tr>
-                    @endif
-
-                    <!-- GST -->
-                    <tr>
-                        <td colspan="2" class="text-right">GST ({{ $gstPercent }}%):</td>
-                        <td class="text-right">₹{{ number_format($gstAmount, 2) }}</td>
-                    </tr>
-
-                    <!-- Discount -->
-                    @if(isset($discountAmount) && $discountAmount > 0)
-                    <tr>
-                        <td colspan="2" class="text-right text-success">Discount:</td>
-                        <td class="text-right text-success">- ₹{{ number_format($discountAmount, 2) }}</td>
-                    </tr>
-                    @endif
-
                     <!-- Final Total -->
                     <tr class="final-total">
                         <td colspan="2" class="text-right" style="padding: 15px;">Total Paid:</td>

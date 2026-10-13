@@ -20,6 +20,7 @@ public function getChefCategory()
 
     $categories = \DB::table('categories')
         ->orderBy('id', 'desc')
+        ->whereNull('deleted_at')
         ->get()
         ->map(function ($category) {
             if (!empty($category->image)) {

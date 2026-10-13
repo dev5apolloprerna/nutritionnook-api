@@ -1571,7 +1571,7 @@ class ApiController extends Controller
             ->values();
 
         $dishesById = DB::table('food_dishes')
-            ->select('id', 'name', 'price', 'image', 'preparation_time_id')
+            ->select('id', 'name', 'price', 'image', 'preparation_time_id','food_type')
             ->whereIn('id', $dishIds)
             ->get()
             ->keyBy('id');
@@ -1604,6 +1604,7 @@ class ApiController extends Controller
                             'preparation_time_id' => $order->status === 'preparing'
                                 ? $dish->preparation_time_id
                                 : null,
+                            'food_type'        => $item->food_type,
                         ];
                     }
                 }
@@ -2705,6 +2706,7 @@ class ApiController extends Controller
                     'base_price' => $basePrice,
                     'quantity'   => $item['quantity'],
                     'total'      => round($lineTotal),
+                    'food_type'  => $request->food_type ?? FoodDish::FOOD_TYPE_REGULAR, // Default to regular if not provided
                 ];
             }
 
