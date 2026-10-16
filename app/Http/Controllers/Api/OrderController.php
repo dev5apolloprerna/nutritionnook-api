@@ -12,7 +12,7 @@ use App\Services\OrderService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
-class OrderController extends Controller
+class myOrdersOrderController extends Controller
 {
     public function __construct(private OrderService $orderService) {}
 

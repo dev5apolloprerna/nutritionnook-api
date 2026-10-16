@@ -34,6 +34,8 @@ class NotificationController extends Controller
             'type' => 'new_order',
             'orderId' => $request->order_id,
             'customerName' => $request->customer_name,
+            'title' => $title,
+            'body' => $body,
             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
         ];
 
