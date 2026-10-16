@@ -260,7 +260,8 @@ class OrderController extends Controller
                 'review'     => $reviewText,   // ✅ agar review table me ho
                 'rating'     => $rating,       // ✅ agar rating table me ho
                 'rejected_by' => $order->rejected_by,
-                'accepted_at' => $order->accepted_at
+                'accepted_at' => $order->accepted_at,
+                'is_hide' => $order->is_hide
             ];
         });
 
@@ -758,4 +759,35 @@ class OrderController extends Controller
             $data
         );
     }
+
+    public function hideOrder(Request $request)
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $order = \App\Models\Order::where('id', $data['order_id'])
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        $order->is_hide = 1;
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order hidden successfully.',
+            'data' => [
+                'order_id' => $order->id,
+                'is_hide' => 1,
+            ],
+        ]);
+    }
+
 }

@@ -314,7 +314,7 @@ Route::get('list-coupon', [CouponController::class, 'listCoupons']);
 Route::post('/apply-coupon', [CouponController::class, 'applyCoupon']);
 
 
-
+Route::post('/hide-order', [OrderController::class, 'hideOrder']);
 
 
 });
