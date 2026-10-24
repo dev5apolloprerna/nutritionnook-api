@@ -12,7 +12,7 @@ use App\Services\OrderService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
-class myOrdersOrderController extends Controller
+class OrderController extends Controller
 {
     public function __construct(private OrderService $orderService) {}
 
@@ -732,7 +732,7 @@ class myOrdersOrderController extends Controller
             'discount_amount' => (float) number_format($discountAmount, 2),
 
             'date'       => $order->date,
-            'status'     => $order->status,
+            'status'     => CommonHelper::customerOrderStatus($order->status, $order->rejected_by),
             'created_at' => $order->created_at,
             'updated_at' => $order->updated_at,
 
