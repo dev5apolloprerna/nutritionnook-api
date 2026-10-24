@@ -270,11 +270,11 @@
                             <label>Dietary & Preference Tags</label>
                             <select name="preference_tags[]" class="form-select form-control js-example-basic-multiple" multiple="multiple">
                                 @php
-                                    <!-- $dietaryOptions = [
+                                    /* $dietaryOptions = [
                                         'vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 
                                         'halal', 'kosher', 'low-carb', 'keto', 'paleo', 'organic',
                                         'sugar-free', 'egg-free', 'soy-free', 'pescatarian'
-                                    ]; -->
+                                    ]; */
                                     $dietaryOptions = config('chef_profile.dietary_preference_tags', []);
                                     
                                     // Handle preference tags - check old input first, then existing value
@@ -520,6 +520,25 @@
                                 </div>
                             @endif
                         </div>
+
+                        <div class="col-md-6 form-group">
+                            <label for="is_active">Status</label>
+                                <select name="is_active" id="is_active" class="form-control" required>
+                                    <option value="1"
+                                        @selected((string) old('is_active', $chef->is_active ?? 1) === '1')>
+                                        Active
+                                    </option>
+                                    <option value="0"
+                                        @selected((string) old('is_active', $chef->is_active ?? 1) === '0')>
+                                        Inactive
+                                    </option>
+                                </select>
+
+                                @error('is_active')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
+                        </div>
+                        
                     </div>
 
                     <div class="form-group text-center mt-4">

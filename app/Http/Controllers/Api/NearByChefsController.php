@@ -94,6 +94,7 @@ class NearByChefsController extends Controller
             ), 1) AS distance")
             )
             ->having('distance', '<=', $radius)
+            ->where('chefs.is_active', 1)
             // ->where('available', 1)
             ->orderByDesc('has_in_stock_items') 
             ->orderBy('distance', 'asc');
@@ -371,6 +372,7 @@ class NearByChefsController extends Controller
                 'c.business_name',
                 'c.address as chef_address'
             )
+            ->where('c.is_active', 1)
             ->inRandomOrder()
             ->limit(10)
             ->get();

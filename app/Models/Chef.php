@@ -56,7 +56,8 @@ class Chef extends Authenticatable
         'is_pre_order',
         'latitude',
         'longitude',
-        'delivery_radius'
+        'delivery_radius',
+        'is_active'
     ];
 
     protected $casts = [

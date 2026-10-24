@@ -291,6 +291,7 @@ public function todayChef(Request $request)
         )
         ->where('available', 1)
         ->where('is_verify',1)
+        ->where('is_active', 1)
         ->tap(fn ($query) => Chef::applyWorkingDayFilter($query, $today))
         ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
@@ -459,6 +460,7 @@ $defaultLng = env('DEFAULT_LNG', 72.6041);
         )
         ->where('is_pre_order', "1")
         ->where('is_verify',1)
+        ->where('is_active', 1)
         // ->where('available', 1)
         // ->whereJsonContains('working_days', $today)
         ->whereExists(function ($query) {
@@ -604,6 +606,7 @@ public function getChefById(Request $request,$id)
             'closing_time'
         )
         ->where('id', $id)
+        ->where('is_active', 1)
         // ->where('available','1')
         ->first();
         
@@ -1000,6 +1003,7 @@ public function getChefByTag(Request $request)
     // ✅ Pagination
     $chefs = DB::table('chefs')
         ->whereIn('id', $chefIds)
+        ->where('is_active', 1)
         ->paginate($perPage, ['*'], 'page', $page);
 
     $result = [];

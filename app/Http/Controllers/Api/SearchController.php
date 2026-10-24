@@ -118,6 +118,7 @@ class SearchController extends Controller
         $globalQuery = $applyAvailabilityFilters(
             DB::table('food_dishes as d')
                 ->join('chefs as c', 'c.id', '=', 'd.chef_id')
+                ->where('c.is_active', 1)
         );
         FoodDish::applyFoodTypeFilter($globalQuery, $foodType, 'd.food_type');
 
@@ -193,6 +194,7 @@ class SearchController extends Controller
         $dishQuery = $applyAvailabilityFilters(
             DB::table('food_dishes as d')
                 ->join('chefs as c', 'c.id', '=', 'd.chef_id')
+                ->where('c.is_active', 1)
                 ->select(
                     'd.id as dish_id',
                     'd.name as dish_name',
@@ -529,6 +531,7 @@ class SearchController extends Controller
         // =========================
         $foodDishesQuery = DB::table('food_dishes as fd')
             ->join('chefs as c', 'fd.chef_id', '=', 'c.id')
+            ->where('c.is_active', 1)
             ->select(
                 'fd.*',
                 DB::raw("CONCAT('http://thinkdream.in/nutrition-food/', fd.image) AS image"),

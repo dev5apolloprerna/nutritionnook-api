@@ -206,11 +206,12 @@ class ChefManagementController extends Controller
 
             'about_chef' => 'nullable|string',
             'working_days' => 'nullable|array',
-            'delivery_radius' => 'nullable|string'
+            'delivery_radius' => 'nullable|string',
+            'is_active' => ['required', 'boolean'],
         ]);
 
         $data = $request->except(['profile_image', 'cover_image']);
-
+        $data['is_active'] = $request->boolean('is_active');
         // // Convert array fields to JSON
         // $data['working_days'] = !empty($request->working_days) ? json_encode($request->working_days) : json_encode([]);
         // Chef casts working_days to JSON; passing an encoded string here would
@@ -358,11 +359,12 @@ class ChefManagementController extends Controller
 
             'about_chef' => 'nullable|string',
             'working_days' => 'nullable|array',
-            'delivery_radius' => 'nullable|string'
+            'delivery_radius' => 'nullable|string',
+            'is_active' => ['required', 'boolean'],
         ]);
 
         $data = $request->except(['profile_image', 'cover_image']);
-
+        $data['is_active'] = $request->boolean('is_active');
         // // Convert array fields to JSON
         // $data['working_days'] = !empty($request->working_days) ? json_encode($request->working_days) : json_encode([]);
         // Let the Chef model's array cast encode working_days exactly once.
